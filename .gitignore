@@ -1,3 +1,5 @@
+#Data files
+data/*
 # History files
 .Rhistory
 .Rapp.history
