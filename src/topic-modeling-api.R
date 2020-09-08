@@ -11,6 +11,7 @@ library(readr)
 library(textmineR)
 library(ggwordcloud)
 library(gridExtra)
+library(rjson)
 
 
 
@@ -109,23 +110,47 @@ top_words_cloud<-function(DataName = "guardian", K = 10){
   
 }
 
-
+#* Function returing data containing doc_id, date, author, text, length (in words)
+#* @param DataName Name of the data {guardian, twitter, uk}
+#* @param StartDate 
+#* @param EndDate 
+#* @post /documents 
 documents<-function(DataName = "guardian", StartDate = "", EndDate = ""){
-
-  if(stri_cmp_eq(tolower(DataName),"guardian")){
-    data<-read_csv(paste0("./Data/guardian/guardian-articles-predicted-k10.csv"))
-  }else if(stri_cmp_eq(tolower(DataName),"twitter")){
-    data<-read_csv(paste0(""))
-  }else if(stri_cmp_eq(tolower(DataName),"uk")){
-    data<-read_csv(paste0(""))
+  if(!(stri_cmp_eq(tolower(DataName),"guardian") | stri_cmp_eq(tolower(DataName),"twitter") | stri_cmp_eq(tolower(DataName),"uk"))){
+    print("wrong db")
+  }else{
+    if(stri_cmp_eq(tolower(DataName),"guardian")){
+      data<-read_csv2(paste0("./data/full_articles_guardian.csv"), col_types = cols (id = col_character()))
+      data$date_published<-as.Date(as.POSIXct((data$date_published/1000), origin = "1970-01-01"))
+      data$length <- sapply(strsplit(data$text, " "), length)
+      res <- data %>%
+        rename(doc_id = id, date = date_published, author = authors) %>%
+        select(doc_id, date, author, text, length)
+    }else if(stri_cmp_eq(tolower(DataName),"twitter")){
+      data<-read_csv(paste0(""), col_types = cols (id = col_character()))
+      data$length <- sapply(strsplit(data$text, " "), length)
+      res <- data %>%
+        rename(doc_id = id, author = from_user_id) %>%
+        select(doc_id, date, author, text, length)
+    }else if(stri_cmp_eq(tolower(DataName),"uk")){
+      original<-fromJSON(paste0("./data/uk_parliament_climatechange.json"), flatten=TRUE)
+      data <- original$speeches
+      data$length <- sapply(strsplit(data$text, " "), length)
+      res <- data %>%
+        rename(doc_id = id, author = name) %>%
+        select(doc_id, date, author, text, length)
+    }
+    
+    if(stri_isempty(StartDate) | stri_isempty(EndDate) | EndDate<StartDate){
+      print("wrong date")
+    }else{
+      StartDate <- as.Date(StartDate)
+      EndDate <- as.Date(EndDate)
+      res <- res %>%
+          filter(between(as.Date(date),StartDate,EndDate))
+    }
+    return(res)
   }
-  
-  res <- data %>%
-    rename(doc_id = id)
-    filter(doc_id, date, author, text)
-  
-  return(res)
-  
 }
 
 #* Function returing the list containing 1) dataframe: documents x topics x probabilities 2) dataframe: topics x words x probabilities  
