@@ -1,7 +1,7 @@
 # script name:
-# topic-modeling-load.R
+# climate-data.R
 
-#* @apiTitle ClimateData/Topic
+#* @apiTitle ClimateData
 #* @apiDescription Provides pre-trained Topic Models for Datasets
 
 library(dplyr)
@@ -13,7 +13,7 @@ library(ggwordcloud)
 library(gridExtra)
 
 
-#' @get /climate-data/ping
+#' @get ping
 ping <- function () { return ("OK!"); }
 
 
@@ -32,11 +32,11 @@ load_model <- function(DataName = "guardian", K = 10){
   
   if(K==5|K==9|K==10|K==15){
     if(stri_cmp_eq(tolower(DataName),"guardian")){
-      load(paste0("../../data/",K,"_topics-guardian-articles-alpha-0.1-ngram-1.rda"))
+      load(paste0("./data/",K,"_topics-guardian-articles-alpha-0.1-ngram-1.rda"))
     }else if(stri_cmp_eq(tolower(DataName),"twitter")){
       # load(paste0("./results/twitter-2M/",K,"_topics-twitter-2M-alpha-0.1-ngram-1.rda"))
     }else if(stri_cmp_eq(tolower(DataName),"uk")){
-      load(paste0("../../data/",K,"_topics-uk-speeches-alpha-0.1-ngram-1.rda"))
+      load(paste0("./data/",K,"_topics-uk-speeches-alpha-0.1-ngram-1.rda"))
     }
     return(m)
   }
@@ -47,7 +47,7 @@ load_model <- function(DataName = "guardian", K = 10){
 #* @param DataName Name of the data {guardian, twitter, uk}
 #* @param k Cluster number
 #* @png
-#* @get /climate-data/dendrogram 
+#* @get dendrogram 
 dendrogram<-function(DataName = "guardian", K = 10){
   
   Model<-load_model(DataName,K)
@@ -67,7 +67,7 @@ dendrogram<-function(DataName = "guardian", K = 10){
 #* @param DataName Name of the data {guardian, twitter, uk}
 #* @param K Cluster number
 #* @png
-#* @get /top-words-cloud
+#* @get top-words-cloud
 top_words_cloud<-function(DataName = "guardian", K = 10){
   
   Model<-load_model(DataName,K)
@@ -116,7 +116,7 @@ top_words_cloud<-function(DataName = "guardian", K = 10){
 #* @param DataName Name of the data {guardian, twitter, uk}
 #* @param StartDate 
 #* @param EndDate 
-#* @post /climate-data/documents 
+#* @get documents 
 documents<-function(DataName = "guardian", StartDate = "", EndDate = ""){
 
   if(stri_cmp_eq(tolower(DataName),"guardian")){
@@ -144,7 +144,7 @@ documents<-function(DataName = "guardian", StartDate = "", EndDate = ""){
 #* @param K Cluster number
 #* @param JustWordsDF option of returning just the second dataframe: topics x words x probabilities
 #* @param ProbThreshold value below which the word probabilities will be filtered out
-#* @post /climate-data/topics-probs 
+#* @get topics-probs 
 topics_probs<-function(DataName = "guardian", K = 10, JustWordsDF = TRUE, ProbThreshold = 0){
   
   Model<-load_model(DataName,K)

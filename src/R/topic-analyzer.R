@@ -1,15 +1,24 @@
+# script name:
+# topic-analyzer.R
 
-#' @get /topic-analyzer/ping
+#* @apiTitle TopicAnalyzer
+#* @apiDescription Provides comparison of topics
+
+library(jsonlite)
+#' @get ping
 ping <- function () { return ("OK!"); }
 
 
 #' Computes lexical similarities between a collection of topics and infers similarity groups.
 #' @param topic_word_prob A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.
 #' @param grouping_threshold Similarity values under this threshold are removed before grouping topics.
-#' @post /topic-analyzer/similarity
+#' @post similarity
 similarity <- function (topic_word_prob, grouping_threshold = 0) {
 
     require (dplyr)
+    topic_word_prob<-fromJSON(topic_word_prob)
+    topic_word_prob<-as.data.frame(topic_word_prob)
+    names(topic_word_prob)<-c("topic_id","word","prob")
 
     ## filter words
     topic_word_prob <- topic_word_prob %>% filter (prob > 0)
@@ -58,7 +67,7 @@ similarity <- function (topic_word_prob, grouping_threshold = 0) {
 
 #' Computes lexical specificities within a collection of topics.
 #' @param topic_word_prob A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.
-#' @post /topic-analyzer/specificity
+#' @post specificity
 specificity <- function (topic_word_prob, dim_x = 1, dim_y = 2) {
 
     require (dplyr)
