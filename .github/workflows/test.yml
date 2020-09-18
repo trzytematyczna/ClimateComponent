@@ -23,8 +23,9 @@ jobs:
             ${{ runner.os }}-renv-
       - name: Install Renv R package manager
         run: |
-          install.packages(c("renv"))
+          remotes::install_github("rstudio/renv")
           renv::consent(provided = TRUE)
+#          install.packages(c("renv"))
         shell: Rscript {0}
       - name: Restore packages
         shell: Rscript {0}
