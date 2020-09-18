@@ -21,11 +21,12 @@ jobs:
           key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
           restore-keys: |
             ${{ runner.os }}-renv-
-      - name: Install Renv R package manager
-        run: |
-          install.packages(c("renv"))
-          renv::consent(provided = TRUE)
-        shell: Rscript {0}
+#      - name: Install Renv R package manager
+#        run: |
+#          remotes::install_github("rstudio/renv")
+#          renv::consent(provided = TRUE)
+#          install.packages(c("renv"))
+#        shell: Rscript {0}
       - name: Restore packages
         shell: Rscript {0}
         run: |
