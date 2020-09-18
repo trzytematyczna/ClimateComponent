@@ -3,7 +3,8 @@ library (plumber)
 
 pr <- Plumber$new()
 
-files<-dir("../src/R", pattern = ".R", full.names = TRUE)
+setwd("./")
+files<-dir("./src/R", pattern = ".R", full.names = TRUE)
 # files<-c("../src/R/climate-data.R","../src/R/topic-analyzer.R")
 for (file in files) {
   prFile <- plumb(file)

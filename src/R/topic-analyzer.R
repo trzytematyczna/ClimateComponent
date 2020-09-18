@@ -16,10 +16,14 @@ ping <- function () { return ("OK!"); }
 similarity <- function (topic_word_prob, grouping_threshold = 0) {
 
     require (dplyr)
+
+    ##TODO: handling of the json data - they always come as character!
+    ##TODO: following talks, topic-probs returns list of either ONE or TWO dataframes (!)
     topic_word_prob<-fromJSON(topic_word_prob)
     topic_word_prob<-as.data.frame(topic_word_prob)
     names(topic_word_prob)<-c("topic_id","word","prob")
-
+    ##
+    
     ## filter words
     topic_word_prob <- topic_word_prob %>% filter (prob > 0)
     topic_nb <- topic_word_prob %>% pull (topic_id) %>% unique %>% length
