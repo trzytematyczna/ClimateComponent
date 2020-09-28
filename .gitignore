@@ -9,6 +9,7 @@ data/twitter-all-data.csv
 data/guardian-all-data.csv
 data/guardian_words-topics.csv
 data/uk_words-topics.csv
+test/testthat_test1.R
 
 # History files
 .Rhistory
