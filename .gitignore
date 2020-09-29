@@ -1,5 +1,15 @@
 #Data files
-data/*
+data/10_topics-guardian-articles-alpha-0.1-ngram-1.rda
+data/10_topics-uk-speeches-alpha-0.1-ngram-1.rda
+data/full_articles_guardian.csv
+data/topic-probs-from-curl.json
+data/uk_parliament_climatechange.json
+data/twitter_words-topics.csv
+data/twitter-all-data.csv
+data/guardian-all-data.csv
+data/guardian_words-topics.csv
+data/uk_words-topics.csv
+test/testthat_test1.R
 
 # History files
 .Rhistory
