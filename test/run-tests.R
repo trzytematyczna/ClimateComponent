@@ -1,4 +1,4 @@
-setwd ("..")
+## setwd ("..")
 source ("./src/R/climate-data.R")
 source ("./src/R/topic-analyzer.R")
 
