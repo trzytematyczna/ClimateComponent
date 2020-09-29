@@ -1,27 +1,28 @@
 # script name:
 # topic-analyzer.R
 
-#* @apiTitle TopicAnalyzer
+#* @apiTitle topic-analyzer
 #* @apiDescription Provides comparison of topics
 
-library(jsonlite)
-#' @get ping
+## library (jsonlite)
+
+#' @get /ping
 ping <- function () { return ("OK!"); }
 
 
 #' Computes lexical similarities between a collection of topics and infers similarity groups.
 #' @param topic_word_prob A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.
 #' @param grouping_threshold Similarity values under this threshold are removed before grouping topics.
-#' @post similarity
+#' @post /similarity
 similarity <- function (topic_word_prob, grouping_threshold = 0) {
 
-    require (dplyr)
+    suppressMessages (require (dplyr))
 
     ##TODO: handling of the json data - they always come as character!
     ##TODO: following talks, topic-probs returns list of either ONE or TWO dataframes (!)
-    topic_word_prob<-fromJSON(topic_word_prob)
-    topic_word_prob<-as.data.frame(topic_word_prob)
-    names(topic_word_prob)<-c("topic_id","word","prob")
+    ## topic_word_prob<-fromJSON(topic_word_prob)
+    ## topic_word_prob<-as.data.frame(topic_word_prob)
+    ## names(topic_word_prob)<-c("topic_id","word","prob")
     ##
     
     ## filter words
@@ -49,7 +50,7 @@ similarity <- function (topic_word_prob, grouping_threshold = 0) {
         filter (topic1_id < topic2_id)
 
     ## compute clusters
-    require (igraph)
+    suppressMessages (require (igraph))
     graph <-
         table %>%
         select (from = topic1_id, to = topic2_id, weight = similarity) %>%
@@ -71,13 +72,13 @@ similarity <- function (topic_word_prob, grouping_threshold = 0) {
 
 #' Computes lexical specificities within a collection of topics.
 #' @param topic_word_prob A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.
-#' @post specificity
+#' @post /specificity
 specificity <- function (topic_word_prob, dim_x = 1, dim_y = 2) {
 
-    require (dplyr)
-    require (tidyr)
-    require (tibble)
-    require (FactoMineR)
+    suppressMessages (require (dplyr))
+    suppressMessages (require (tidyr))
+    suppressMessages (require (tibble))
+    suppressMessages (require (FactoMineR))
     
     data <- topic_word_prob %>% spread (word, prob)
     topics_id <- data %>% pull (topic_id)

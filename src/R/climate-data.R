@@ -4,16 +4,16 @@
 #* @apiTitle ClimateData
 #* @apiDescription Provides pre-trained Topic Models for Datasets
 
-library(dplyr)
-library(ggplot2)
-library(stringi)
-library(readr)
-library(textmineR)
-library(ggwordcloud)
-library(gridExtra)
+suppressMessages (library(dplyr))
+suppressMessages (library(ggplot2))
+suppressMessages (library(stringi))
+suppressMessages (library(readr))
+suppressMessages (library(textmineR))
+suppressMessages (library(ggwordcloud))
+suppressMessages (library(gridExtra))
 
 
-#' @get ping
+#* @get /ping
 ping <- function () { return ("OK!"); }
 
 
@@ -47,7 +47,7 @@ load_model <- function(DataName = "guardian", K = 10){
 #* @param DataName Name of the data {guardian, twitter, uk}
 #* @param k Cluster number
 #* @png
-#* @get dendrogram 
+#* @post /dendrogram 
 dendrogram<-function(DataName = "guardian", K = 10){
   
   Model<-load_model(DataName,K)
@@ -67,7 +67,7 @@ dendrogram<-function(DataName = "guardian", K = 10){
 #* @param DataName Name of the data {guardian, twitter, uk}
 #* @param K Cluster number
 #* @png
-#* @get top-words-cloud
+#* @post /top-words-cloud
 top_words_cloud<-function(DataName = "guardian", K = 10){
   
   Model<-load_model(DataName,K)
@@ -116,7 +116,7 @@ top_words_cloud<-function(DataName = "guardian", K = 10){
 #* @param DataName Name of the data {guardian, twitter, uk}
 #* @param StartDate 
 #* @param EndDate 
-#* @get documents 
+#* @post /documents 
 documents<-function(DataName = "guardian", StartDate = "", EndDate = ""){
 
   if(stri_cmp_eq(tolower(DataName),"guardian")){
@@ -144,10 +144,10 @@ documents<-function(DataName = "guardian", StartDate = "", EndDate = ""){
 #* @param K Cluster number
 #* @param JustWordsDF option of returning just the second dataframe: topics x words x probabilities
 #* @param ProbThreshold value below which the word probabilities will be filtered out
-#* @get topics-probs 
-topics_probs<-function(DataName = "guardian", K = 10, JustWordsDF = TRUE, ProbThreshold = 0){
+#* @post /topics-probs 
+topics_probs<-function(dataname = "guardian", k = 10, JustWordsDF = TRUE, ProbThreshold = 0){
   
-  Model<-load_model(DataName,K)
+  Model<-load_model(dataname,k)
   Out <- list()
   
   TermsSummary <-data.frame(t(Model$phi))
