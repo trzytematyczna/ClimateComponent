@@ -1,9 +1,6 @@
 # script name:
 # climate-data.R
 
-#* @apiTitle ClimateData
-#* @apiDescription Provides pre-trained Topic Models for Datasets
-
 suppressMessages (library(dplyr))
 suppressMessages (library(ggplot2))
 suppressMessages (library(stringi))
@@ -12,65 +9,64 @@ suppressMessages (library(textmineR))
 suppressMessages (library(ggwordcloud))
 suppressMessages (library(gridExtra))
 
-
 #* @get /ping
 ping <- function () { return ("OK!"); }
 
 
-load_model <- function(DataName = "guardian", K = 10){
+load_model <- function(dataname = "guardian", k = 10){
   
   # if(k==5|k==9|k==10|k==15){
-  #   if(stri_cmp_eq(tolower(DataName),"guardian")){
+  #   if(stri_cmp_eq(tolower(dataname),"guardian")){
   #     load(paste0("./",k,"_topics-guardian-articles-alpha-0.1-ngram-1.rda"))
-  #   }else if(stri_cmp_eq(tolower(DataName),"twitter")){
+  #   }else if(stri_cmp_eq(tolower(dataname),"twitter")){
   #     load(paste0("./",k,"_topics-twitter-2M-alpha-0.1-ngram-1.rda"))
-  #   }else if(stri_cmp_eq(tolower(DataName),"uk")){
+  #   }else if(stri_cmp_eq(tolower(dataname),"uk")){
   #     load(paste0("./",k,"_topics-uk-speeches-alpha-0.1-ngram-1.rda"))
   #   }
   #   return(m)
   # }
   
-  if(K==5|K==9|K==10|K==15){
-    if(stri_cmp_eq(tolower(DataName),"guardian")){
-      load(paste0("./data/",K,"_topics-guardian-articles-alpha-0.1-ngram-1.rda"))
-    }else if(stri_cmp_eq(tolower(DataName),"twitter")){
-      # load(paste0("./results/twitter-2M/",K,"_topics-twitter-2M-alpha-0.1-ngram-1.rda"))
-    }else if(stri_cmp_eq(tolower(DataName),"uk")){
-      load(paste0("./data/",K,"_topics-uk-speeches-alpha-0.1-ngram-1.rda"))
+  if(k==5|k==9|k==10|k==15){
+    if(stri_cmp_eq(tolower(dataname),"guardian")){
+      load(paste0("./data/",k,"_topics-guardian-articles-alpha-0.1-ngram-1.rda"))
+    }else if(stri_cmp_eq(tolower(dataname),"twitter")){
+      # load(paste0("./results/twitter-2M/",k,"_topics-twitter-2M-alpha-0.1-ngram-1.rda"))
+    }else if(stri_cmp_eq(tolower(dataname),"uk")){
+      load(paste0("./data/",k,"_topics-uk-speeches-alpha-0.1-ngram-1.rda"))
     }
     return(m)
   }
 }
 
 
-#* Returns dendrogram of topics for selected data and cluster numer TODO:ggplot -> html
-#* @param DataName Name of the data {guardian, twitter, uk}
+#* Returns dendrogram of topics for selected data and cluster numer
+#* @param dataname Name of the data {guardian, twitter, uk}
 #* @param k Cluster number
-#* @png
-#* @post /dendrogram 
-dendrogram<-function(DataName = "guardian", K = 10){
+#* @serializer png
+#* @get /dendrogram 
+dendrogram<-function(dataname = "guardian", k = 10){
   
-  Model<-load_model(DataName,K)
+  Model<-load_model(dataname,k)
   
   #Visualising of topics in a dendrogram
   #probability distributions called Hellinger distance, distance between 2 probability vectors
   Model$topic_linguistic_dist <- CalcHellingerDist(Model$phi)
   Model$hclust <- hclust(as.dist(Model$topic_linguistic_dist), "ward.D")
   Model$hclust$labels <- paste(Model$hclust$labels, Model$labels[ , 1])
-  print(plot(Model$hclust))
-  
+  plot(Model$hclust)
+  # html_plot(plot(Model$hclust), "dendrogram.html")
   
 }
 
 
-#* Returns worldclod of each of the topic (all in one plot) TODO:ggplot -> html
-#* @param DataName Name of the data {guardian, twitter, uk}
-#* @param K Cluster number
-#* @png
-#* @post /top-words-cloud
-top_words_cloud<-function(DataName = "guardian", K = 10){
+#* Returns worldclod of each of the topic (all in one plot)
+#* @param dataname Name of the data {guardian, twitter, uk}
+#* @param k Cluster number
+#* @serializer png
+#* @get /top-words-cloud
+top_words_cloud<-function(dataname = "guardian", k = 10){
   
-  Model<-load_model(DataName,K)
+  Model<-load_model(dataname,k)
   
   #terms.summary -> word + topic + probability
   TermsSummary <-data.frame(t(Model$phi))
@@ -108,40 +104,42 @@ top_words_cloud<-function(DataName = "guardian", K = 10){
       ggtitle(paste0('Topic ',i))
   }
   wcall<-grid.arrange(grobs=wclist, top="Top words", ncol=2)
-  print(wcall)
+  # print(wcall)
   
 }
 
-#* Function returing 
-#* @param DataName Name of the data {guardian, twitter, uk}
-#* @param StartDate 
-#* @param EndDate 
-#* @post /documents 
-documents<-function(DataName = "guardian", StartDate = "", EndDate = ""){
+#* Function returing sample of documents
+#* @param dataname Name of the data {guardian, twitter, uk}
+#* @param startdate Start of period of data to return
+#* @param enddate  End of period of data to return
+#* @get /sampledocuments 
+sampledocuments<-function(dataname = "guardian", startdate = "", enddate = ""){
 
-  if(stri_cmp_eq(tolower(DataName),"guardian")){
-    # data<-read_csv2(paste0("./data/full_articles_guardian.csv"),col_types = cols (id = col_character()))#, date_modified=col_time()))
-    data<-read_csv2(paste0("../idf-trial/data/guardian/full_articles_guardian.csv"), col_types = cols (id = col_character()))
-    data$date_published<-as.Date(as.POSIXct((data$date_published/1000), origin = "1970-01-01"))
-  }else if(stri_cmp_eq(tolower(DataName),"twitter")){
-    data<-read_csv(paste0(""))
-  }else if(stri_cmp_eq(tolower(DataName),"uk")){
-    data<-read_csv(paste0(""))
+  if(stri_cmp_eq(tolower(dataname),"guardian")){
+    data<-read_csv(paste0("./data/guardian-sample.csv"), col_types = cols (doc_id = col_character()))
+  }else if(stri_cmp_eq(tolower(dataname),"twitter")){
+    data<-read_csv(paste0("./data/twitter-sample.csv"))
+  }else if(stri_cmp_eq(tolower(dataname),"uk")){
+    data<-read_csv(paste0("./data/uk-sample.csv"))
   }
   
-  data$length <- sapply(strsplit(data$text, " "), length)
+  if(!stri_isempty(startdate)& !stri_isempty(enddate)){
+     startdate<-as.Date(startdate)
+     enddate<-as.Date(enddate)
+    if(startdate<enddate & startdate>=min(data$date) & enddate<=max(data$date)){
+      data<-data%>%filter(between(date,startdate,enddate))
+    } else{
+      print("wrong data!")
+    }
+  }
   
-  res <- data %>%
-    rename(doc_id = id, date = date_published) %>%
-    select(doc_id, date, authors, text, length)
-  
-  return(res)
+  return(data)
   
 }
 
 #* Function returing the list containing 1) dataframe: documents x topics x probabilities 2) dataframe: topics x words x probabilities  
-#* @param DataName Name of the data {guardian, twitter, uk}
-#* @param K Cluster number
+#* @param dataname Name of the data {guardian, twitter, uk}
+#* @param k Cluster number
 #* @param JustWordsDF option of returning just the second dataframe: topics x words x probabilities
 #* @param ProbThreshold value below which the word probabilities will be filtered out
 #* @post /topics-probs 
