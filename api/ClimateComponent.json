@@ -1,1 +1,340 @@
-{"servers":[{"url":""}],"openapi":"3.0.3","info":{"description":"API Description","title":"API Title","version":"1.0.0"},"paths":{"/climate-data/ping":{"get":{"summary":"","responses":{"default":{"description":"Default response."}},"parameters":[]}},"/climate-data/dendrogram":{"post":{"summary":" Returns dendrogram of topics for selected data and cluster numer TODO:ggplot -> html","responses":{"default":{"description":"Default response."}},"parameters":[{"name":"DataName","description":"Name of the data {guardian, twitter, uk}","in":"query","required":false,"schema":{"type":"string","default":"guardian"}},{"name":"k","description":"Cluster number","in":"query","required":false,"schema":{"type":"string"}},{"name":"K","in":"query","required":false,"schema":{"type":"number","format":"double","default":10}}]}},"/climate-data/top-words-cloud":{"post":{"summary":" Returns worldclod of each of the topic (all in one plot) TODO:ggplot -> html","responses":{"default":{"description":"Default response."}},"parameters":[{"name":"DataName","description":"Name of the data {guardian, twitter, uk}","in":"query","required":false,"schema":{"type":"string","default":"guardian"}},{"name":"K","description":"Cluster number","in":"query","required":false,"schema":{"type":"number","format":"double","default":10}}]}},"/climate-data/documents":{"post":{"summary":" Function returing ","responses":{"default":{"description":"Default response."}},"parameters":[{"name":"DataName","description":"Name of the data {guardian, twitter, uk}","in":"query","required":false,"schema":{"type":"string","default":"guardian"}},{"name":"StartDate","description":"","in":"query","required":false,"schema":{"type":"string","default":""}},{"name":"EndDate","description":"","in":"query","required":false,"schema":{"type":"string","default":""}}]}},"/climate-data/topics-probs":{"post":{"summary":" Function returing the list containing 1) dataframe: documents x topics x probabilities 2) dataframe: topics x words x probabilities  ","responses":{"default":{"description":"Default response."}},"parameters":[{"name":"DataName","description":"Name of the data {guardian, twitter, uk}","in":"query","required":false,"schema":{"type":"string"}},{"name":"K","description":"Cluster number","in":"query","required":false,"schema":{"type":"string"}},{"name":"JustWordsDF","description":"option of returning just the second dataframe: topics x words x probabilities","in":"query","required":false,"schema":{"type":"boolean","default":true}},{"name":"ProbThreshold","description":"value below which the word probabilities will be filtered out","in":"query","required":false,"schema":{"type":"number","format":"double","default":0}},{"name":"dataname","in":"query","required":false,"schema":{"type":"string","default":"guardian"}},{"name":"k","in":"query","required":false,"schema":{"type":"number","format":"double","default":10}}]}},"/topic-analyzer/ping":{"get":{"summary":"","responses":{"default":{"description":"Default response."}},"parameters":[]}},"/topic-analyzer/similarity":{"post":{"summary":" Computes lexical similarities between a collection of topics and infers similarity groups.","responses":{"default":{"description":"Default response."}},"parameters":[{"name":"topic_word_prob","description":"A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.","in":"query","required":true,"schema":{"type":"string"}},{"name":"grouping_threshold","description":"Similarity values under this threshold are removed before grouping topics.","in":"query","required":false,"schema":{"type":"number","format":"double","default":0}}]}},"/topic-analyzer/specificity":{"post":{"summary":" Computes lexical specificities within a collection of topics.","responses":{"default":{"description":"Default response."}},"parameters":[{"name":"topic_word_prob","description":"A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.","in":"query","required":true,"schema":{"type":"string"}},{"name":"dim_x","in":"query","required":false,"schema":{"type":"number","format":"double","default":1}},{"name":"dim_y","in":"query","required":false,"schema":{"type":"number","format":"double","default":2}}]}}}}
+{
+    "servers": [
+      {
+        "url": ""
+      }
+    ],
+    "openapi": "3.0.3",
+    "info": {
+      "description": "Methods for visualizing and analyzing the climate change debate in three media spheres: UK parliament speeches, the Guardian and Twitter.",
+      "title": "Climate Component",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/climate-data/ping": {
+        "get": {
+          "summary": "",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": []
+        }
+      },
+      "/climate-data/sampledocuments": {
+        "get": {
+          "summary": " Function returing sample of documents",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "corpus",
+              "description": "Name of the corpus {guardian, twitter, uk}",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "guardian"
+              }
+            },
+            {
+              "name": "start_date",
+              "description": "Start of period of data to return",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": ""
+              }
+            },
+            {
+              "name": "end_date",
+              "description": "End of period of data to return",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": ""
+              }
+            }
+          ]
+        }
+      },
+      "/climate-data/topics-probs": {
+        "post": {
+          "summary": " Function returing the list containing one or two dataframes: documents x topics x probabilities and topics x words x probabilities  ",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "corpus",
+              "description": "Name of the corpus {guardian, twitter, uk}",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "guardian"
+              }
+            },
+            {
+              "name": "k",
+              "description": "Cluster number",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 10
+              }
+            },
+            {
+              "name": "just_words",
+              "description": "option of returning just the second dataframe: topics x words x probabilities",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            {
+              "name": "prob_threshold",
+              "description": "value below which the word probabilities will be filtered out",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 0
+              }
+            }
+          ]
+        }
+      },
+      "/event-analyzer/events": {
+        "post": {
+          "summary": " Returns higlighted events defined as document probability higher than event_min_prob lasting at least event_min_length; output:  result$data -  #xaxis - index, yaxis - sum_probability, result$avg - horisontal line, result$segments - for a single rectangle: xmin=seg_start, xmax=seg_end (x-axis bounds) ymin=min_prob, ymax=max_prob (y-axis bounds )",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "date_topic_prob",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "event_min_length",
+              "description": "Minimum duration of the event in units in accordance with the aggregation unit of the input data (day/week/month)",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 2
+              }
+            },
+            {
+              "name": "event_min_prob",
+              "description": "Minimum probability that above which event is defined",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 0.12
+              }
+            },
+            {
+              "name": "timeline",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      },
+      "/event-analyzer/trends": {
+        "post": {
+          "summary": " To be removed / Returns events (same as event function) with highlighted trends: colors signifying increasing/decreasing/same trend",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "date_topic_prob",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "event_min_length",
+              "description": "Minimum of length of the event in units in accordance with the aggregation unit of the input data (day/week/month)",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 2
+              }
+            },
+            {
+              "name": "event_min_prob",
+              "description": "Minimum probability that event must have",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 0.12
+              }
+            },
+            {
+              "name": "trendthreshold",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 0.02
+              }
+            }
+          ]
+        }
+      },
+      "/event-analyzer/eventwords": {
+        "post": {
+          "summary": " Function returing most significant words (using tfidf) from given texts (to be used for naming the events from events())",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "id_text",
+              "description": "data with only doc_id and text already filtered by date and topic",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "top",
+              "description": "how many words (descending importance) to return, default 10",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 10
+              }
+            }
+          ]
+        }
+      },
+      "/topic-analyzer/ping": {
+        "get": {
+          "summary": "",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": []
+        }
+      },
+      "/topic-analyzer/similarity": {
+        "post": {
+          "summary": " Computes lexical similarities between a collection of topics and infers similarity groups.",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "topic_word_prob",
+              "description": "A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "grouping_threshold",
+              "description": "Similarity values under this threshold are removed before grouping topics.",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 0
+              }
+            }
+          ]
+        }
+      },
+      "/topic-analyzer/specificity": {
+        "post": {
+          "summary": " Computes lexical specificities within a collection of topics.",
+          "responses": {
+            "default": {
+              "description": "Default response."
+            }
+          },
+          "parameters": [
+            {
+              "name": "topic_word_prob",
+              "description": "A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "dim_x",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 1
+              }
+            },
+            {
+              "name": "dim_y",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double",
+                "default": 2
+              }
+            }
+          ]
+        }
+      }
+    }
+  }

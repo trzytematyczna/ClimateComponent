@@ -1,6 +1,7 @@
 ## setwd ("..")
 source ("./src/R/climate-data.R")
 source ("./src/R/topic-analyzer.R")
+source ("./src/R/event-analyzer.R")
 
 print ("GET topics-probs")
 probs <- topics_probs (dataname = "guardian", k = 10)
