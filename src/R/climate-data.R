@@ -21,14 +21,14 @@ request <- function (req) {
 }
 
 #* @post /timeline
-timeline <- function (corpus = NULL, timescale = "week", topics = FALSE, doc_ids = FALSE, sample = FALSE) {
+timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
     
     reqs$timeline$dims$corpus <- list()
-    if (! is.null (corpus)) reqs$topics$dims$corpus$select <- corpus
+    if (! is.null (corpus)) reqs$timeline$dims$corpus$select <- corpus
     
     reqs$timeline$dims$date$group_by <- timescale
-    if (topics) reqs$timeline$dims$topic <- list()
+    if (by_topic) reqs$timeline$dims$topic <- list()
 
     reqs$timeline$vars <- c ("doc_nb", "word_nb")
     if (doc_ids) reqs$timeline$vars <- c (reqs$timeline$vars, "doc_ids")
