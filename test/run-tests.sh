@@ -8,10 +8,14 @@ printf "PING topic-analyzer\n"
 curl -s http://localhost:8000/topic-analyzer/ping
 printf "\n\n"
 
-printf "CALL cliamte-data FOR topics-probs\n"
-curl -s http://localhost:8000/climate-data/topics-probs -d '{"dataname": "guardian", "k": 10}' | head -c1000
+printf "CALL climate-data FOR topics\n"
+curl -s http://localhost:8000/climate-data/topics -d '{}' | head -c1000
 printf "\n\n"
 
-printf "PIPE climate-data AND topic-analyzer\n"
-curl -s http://localhost:8000/climate-data/topics-probs -d '{"dataname": "guardian", "k": 10}' | curl -s http://localhost:8000/topic-analyzer/similarity -d '@-'
+printf "PIPE climate-data AND topic-analyzer FOR topic similarities\n"
+curl -s http://localhost:8000/climate-data/topics -d '{}' | curl -s http://localhost:8000/topic-analyzer/similarity -d '@-' | head -c1000
+printf "\n\n"
+
+printf "PIPE climate-data AND topic-analyzer FOR topic specificities\n"
+curl -s http://localhost:8000/climate-data/topics -d '{"topic":["G1","T2","G4","P8"]}' | curl -s http://localhost:8000/topic-analyzer/specificity -d '@-' | head -c1000
 printf "\n\n"

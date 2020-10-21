@@ -1,118 +1,173 @@
 # script name:
 # climate-data.R
 
-suppressMessages (library(dplyr))
-suppressMessages (library(ggplot2))
-suppressMessages (library(stringi))
-suppressMessages (library(readr))
-suppressMessages (library(textmineR))
-suppressMessages (library(ggwordcloud))
-suppressMessages (library(gridExtra))
+library (dplyr, quietly = TRUE, warn.conflicts = FALSE)
+library (readr, quietly = TRUE, warn.conflicts = FALSE)
+library (jsonlite, quietly = TRUE, warn.conflicts = FALSE)
 
 #* @get /ping
 ping <- function () { return ("OK!"); }
 
-
-load_model <- function(corpus = "guardian", k = 10){
-  
-  if(k==5|k==9|k==10|k==15){
-    if(stri_cmp_eq(tolower(corpus),"guardian")){
-      load(paste0("./data/",k,"_topics-guardian-articles-alpha-0.1-ngram-1.rda"))
-    }else if(stri_cmp_eq(tolower(corpus),"twitter")){
-      # load(paste0("./results/twitter-2M/",k,"_topics-twitter-2M-alpha-0.1-ngram-1.rda"))
-    }else if(stri_cmp_eq(tolower(corpus),"uk")){
-      # load(paste0("./data/",k,"_topics-uk-alpha-0.1-ngram-1.rda"))
-      load(paste0("./results/parliamentary/10_topics-uk-alpha-0.1-ngram-1.rda"))
-    }
-    return(m)
-  }
+#* @post /request-sample
+request.sample <- function (req) {
+    reqs <- fromJSON (req$postBody)
+    get.data (reqs, sample = TRUE)
 }
 
-#* Function returing sample of documents
-#* @param corpus Name of the corpus {guardian, twitter, uk}
-#* @param start_date Start of period of data to return
-#* @param end_date  End of period of data to return
-#* @get /sampledocuments 
-sampledocuments<-function(corpus = "guardian", start_date = "", end_date = ""){
-
-  #loading corpus
-  if(stri_cmp_eq(tolower(corpus),"guardian")){
-    data<-read_csv(paste0("./data/guardian-sample.csv"), col_types = cols (doc_id = col_character()))
-  }else if(stri_cmp_eq(tolower(corpus),"twitter")){
-    data<-read_csv(paste0("./data/twitter-sample.csv"))
-  }else if(stri_cmp_eq(tolower(corpus),"uk")){
-    data<-read_csv(paste0("./data/uk-sample.csv"))
-  }
-  
-  #filtering data with dates
-  if(!stri_isempty(start_date)& !stri_isempty(end_date)){
-     start_date<-as.Date(start_date)
-     end_date<-as.Date(end_date)
-    if(start_date<end_date & start_date>=min(data$date) & end_date<=max(data$date)){
-      data<-data%>%filter(between(date,start_date,end_date))
-    } else{
-      print("wrong data!")
-    }
-  }
-  
-  return(data)
-  
+#* @post /request
+request <- function (req) {
+    reqs <- fromJSON (req$postBody)
+    get.data (reqs, sample = FALSE)
 }
 
-#* Function returing the list containing one or two dataframes: documents x topics x probabilities and topics x words x probabilities  
-#* @param corpus Name of the corpus {guardian, twitter, uk}
-#* @param k Cluster number
-#* @param just_words option of returning just the second dataframe: topics x words x probabilities
-#* @param prob_threshold value below which the word probabilities will be filtered out
-#* @post /topics-probs 
-topics_probs<-function(corpus = "guardian", k = 10, just_words = TRUE, prob_threshold = 0){
-  
-  #loading model .rda
-  Model<-load_model(corpus,k)
-  Out <- list()
-  
-  #extracting dataframe with words
-  TermsSummary <-data.frame(t(Model$phi))
-  TermsSummary$word <- rownames(TermsSummary) 
-  rownames(TermsSummary) <- 1:nrow(TermsSummary)
-  TermsSummary <- TermsSummary %>% 
-    reshape2::melt(idvars = "word") %>%
-    rename(topic_id = variable, prob = value) %>% 
-    tidyr::separate(topic_id, into =c("t","topic_id")) %>% 
-    select(-t) %>% 
-    group_by(topic_id) %>% 
-    filter(prob > 0) %>%
-    arrange(desc(prob))%>%
-    select(topic_id,word,prob)
-
-  #thresholding words that have probability > threshod
-  if(as.double(prob_threshold) > 0){
-    TermsSummary <- TermsSummary %>%
-      filter(prob > as.double(prob_threshold))
-  }
-  
-  #saving words to result
-  Out$topic_word_prob <- TermsSummary
-  
-  
-  #extracting dataframe with documents x topics
-  if(!as.logical(just_words)){
-    DocumentTopic <- data.frame(Model$theta)
-    DocumentTopic$document <-rownames(DocumentTopic) 
-    rownames(DocumentTopic) <- 1:nrow(DocumentTopic)
-    DocumentTopic <- DocumentTopic %>% 
-      reshape2::melt(id.vars = "document") %>% 
-      rename(topic_id = variable, prob = value, doc_id = document) %>% 
-      tidyr::separate(topic_id, into =c("t","topic_id")) %>% 
-      select(-t) %>% 
-      group_by(doc_id) %>% 
-      arrange(desc(prob)) 
+#* @post /timeline
+timeline <- function (corpus = NULL, timescale = "week", topics = FALSE, doc_ids = FALSE, sample = FALSE) {
+    reqs <- list()
     
-    #saving to result
-    Out$doc_topic_prob <- DocumentTopic
+    reqs$timeline$dims$corpus <- list()
+    if (! is.null (corpus)) reqs$topics$dims$corpus$select <- corpus
     
-  }
-  
-  return(Out)
+    reqs$timeline$dims$date$group_by <- timescale
+    if (topics) reqs$timeline$dims$topic <- list()
+
+    reqs$timeline$vars <- c ("doc_nb", "word_nb")
+    if (doc_ids) reqs$timeline$vars <- c (reqs$timeline$vars, "doc_ids")
+
+    get.data (reqs, sample)
 }
 
+
+#* @post /topics
+topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE) {
+    reqs <- list()
+
+    reqs$topics$dims$corpus <- list()
+    if (! is.null (corpus)) reqs$topics$dims$corpus$select <- corpus
+
+    reqs$topics$dims$topic <- list()
+    if (! is.null (topic)) reqs$topics$dims$topic$select <- topic
+
+    reqs$topics$vars <- c ("doc_nb", "word_nb", "word_dist")
+    if (doc_ids) reqs$topics$vars <- c (reqs$topics$vars, "doc_ids")
+
+    get.data (reqs, sample)
+}
+
+
+get.data <- function (reqs, sample = FALSE) {
+    start.time <- Sys.time()
+
+    if (sample) { dir <- "./data/sample/" } else { dir <- "./data/full/" }
+
+    ress <- list ()
+
+    ## FOR EACH REQUEST
+    for (req.name in names (reqs)) {
+        req <- reqs[[req.name]]
+        dim.names <- names (req$dims)
+        var.names <- req$vars
+        data <- NULL
+
+        ## get corpora
+        corpus.names <- c ("guardian", "twitter", "uk_parliament")
+        if ("corpus" %in% dim.names && length (req$dims[["corpus"]]) > 0 && names (req$dims[["corpus"]]) == "select") {
+            corpus.names <- req$dims[["corpus"]]$select
+        }
+
+        ## get file name
+        all.dim.names <- c ("author", "interactor", "date", "topic")
+        file.name <- paste (all.dim.names [all.dim.names %in% dim.names], collapse = ".")
+
+        main.dim.names <- dim.names [dim.names != "corpus"]
+        for (corpus.name in corpus.names) {
+            corpus.data <- read_csv (paste0 (dir, corpus.name, ".", file.name, ".csv"))
+            corpus.data <- corpus.data %>% select (main.dim.names, names (corpus.data) %>% intersect (var.names))
+            corpus.data$corpus <- corpus.name
+
+            ## FOR EACH DIMENSION
+            for (dim.name in main.dim.names) {
+                dim <- req$dims[[dim.name]]
+
+                ## FOR EACH OPERATION
+                for (op.name in names (dim)) {
+                    op <- dim[[op.name]]
+
+                    if (op.name == "select") {
+                        corpus.data <- corpus.data %>% filter (!! sym (dim.name) %in% !! op)
+                    }
+
+                    else if (op.name == "select_from") {
+                        corpus.data <- corpus.data %>% filter (!! sym (dim.name) >= !! op)
+                    }
+
+                    else if (op.name == "select_to") {
+                        corpus.data <- corpus.data %>% filter (!! sym (dim.name) <= !! op)
+                    }
+
+                    else if (op.name == "group_by") {
+                        
+                        sup.dim.name <- dim.name
+                        if (sup.dim.name == "interactor") sup.dim.name <- "author"
+                        corpus.data.tmp <- read_csv (paste0 (dir, corpus.name, ".", sup.dim.name, ".csv"))
+
+                        agg.ids <- function (ids) {
+                            paste0 (ids [! is.na (ids) & ids != ""], collapse = " ")
+                        }
+                        
+                        corpus.data <-
+                            corpus.data %>%
+                            left_join (corpus.data.tmp %>% select (!! sym (dim.name) := sup.dim.name, op)) %>%
+                            select (- !! sym (dim.name)) %>%
+                            rename (!! sym (dim.name) := !! op) %>%
+                            group_by_at (vars (dim.names)) %>%
+                            mutate_at (vars (var.names %>% intersect (c ("doc_nb", "word_nb", "char_nb"))), ~ sum (.)) %>%
+                            mutate_at (vars (var.names %>% intersect ("doc_ids")), ~ agg.ids (.)) %>%
+                            slice (1L) %>%
+                            ungroup
+                    }
+                }
+            }
+
+            if (any (var.names %in% c ("author_nb", "author_dist", "mean_follower"))) {
+                sub.dim.name <- "community"
+                corpus.data.tmp <- read_csv (paste0 (dir, corpus.name, ".", sub.dim.name, ".csv"))
+
+                corpus.data <-
+                    corpus.data %>%
+                    left_join (corpus.data.tmp %>% select (author = community, var.names [var.names %in% c ("author_nb", "author_dist", "mean_follower")]))
+            }
+            
+            if (is.null (data)) {
+                data <- corpus.data
+            } else {
+                data <- bind_rows (data, corpus.data)
+            }
+        }
+
+        ## ## AGGREGATE DATA
+        ## data <-
+        ##     data %>%
+        ##     group_by_at (vars (dim.names)) %>%
+        ##     mutate_at (vars (var.names %>% intersect ("doc_nb")), ~ sum (.)) %>%
+        ##     mutate_at (vars (var.names %>% intersect ("doc_ids")), ~ paste0 (., collapse = " ")) %>%
+        ##     slice (1L)
+
+        ## ## ADD UNIDIMENSIONAL VARIABLES
+        ## if ("word_dist" %in% var.names) {
+        ##     dim.name <- "topic"
+        ##     var.name <- "word_dist"
+        ##     data.tmp <- read_csv (paste0 (dim.name, ".csv"))
+        ##     data <- data %>% left_join (data.tmp %>% select (dim.name, var.name))
+        ## }
+
+        ## ## REORDER VARIABLES
+        data <- data %>% select (dim.names, var.names)
+        ress[[req.name]] <- data
+    }
+
+    ## RETURN RESULT
+    end.time <- Sys.time()
+    ## ress$request.time = as.character (end.time - start.time)
+
+    return (ress)    
+}

@@ -4,84 +4,133 @@
 #* @apiTitle topic-analyzer
 #* @apiDescription Provides comparison of topics
 
-## library (jsonlite)
+suppressMessages (require (dplyr))
+suppressMessages (require (igraph))
+suppressMessages (require (tidyr))
+suppressMessages (require (tibble))
+suppressMessages (require (FactoMineR))
+suppressMessages (library (scales))
+suppressMessages (library (RColorBrewer))
+suppressMessages (library (ggrepel))
 
 #' @get /ping
 ping <- function () { return ("OK!"); }
 
 
-#' Computes lexical similarities between a collection of topics and infers similarity groups.
-#' @param topic_word_prob A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.
-#' @param grouping_threshold Similarity values under this threshold are removed before grouping topics.
 #' @post /similarity
-similarity <- function (topic_word_prob, grouping_threshold = 0) {
-
-    suppressMessages (require (dplyr))
-
-    ##TODO: handling of the json data - they always come as character!
-    ##TODO: following talks, topic-probs returns list of either ONE or TWO dataframes (!)
-    ## topic_word_prob<-fromJSON(topic_word_prob)
-    ## topic_word_prob<-as.data.frame(topic_word_prob)
-    ## names(topic_word_prob)<-c("topic_id","word","prob")
-    ##
+similarity <- function (topics, grouping_threshold = 0) {
+    ## topics <- top$topics
     
-    ## filter words
-    topic_word_prob <- topic_word_prob %>% filter (prob > 0)
-    topic_nb <- topic_word_prob %>% pull (topic_id) %>% unique %>% length
-    words <- topic_word_prob %>% group_by (word) %>% summarize (n = n()) %>% filter (n == topic_nb) %>% pull (word)
-    topic_word_prob <- topic_word_prob %>% filter (word %in% words)
-    
+    ## extract word probs
+    dist <- topics$word_dist %>% strsplit (" ")
+    topic_word_prob <- lapply (1:length(dist), function (i) {
+        d <- split (dist[[i]], 1:length(dist[[i]]) %% 2 == 0)
+        tibble (topic = topics$topic[i], word = unname (d[[1]]), prob = as.numeric (unname (d[[2]])))
+    }) %>% bind_rows
+
+    ## normalise probs
+    topic_word_prob <-
+        topic_word_prob %>%
+        group_by (topic) %>%
+        mutate (prob = prob / sum (prob))
+
     ## compute similarity as the inverse of divergence
     table <-
         full_join (
-            topic_word_prob %>% select (word, topic1_id = topic_id, prob1 = prob),
-            topic_word_prob %>% select (word, topic2_id = topic_id, prob2 = prob)
+            topic_word_prob %>% select (word, topic1 = topic, prob1 = prob),
+            topic_word_prob %>% select (word, topic2 = topic, prob2 = prob)
         ) %>%
-        group_by (topic1_id, topic2_id) %>%
+        group_by (topic1, topic2) %>%
         summarize (div = 2^sum (prob1 * log2 (prob1 / prob2))) %>%
-        filter (topic1_id != topic2_id)
+        filter (topic1 != topic2)
 
     ## symmetrize similarity
     table <-
         table %>%
-        full_join (table %>% select (topic1_id = topic2_id, topic2_id = topic1_id, rev_div = div)) %>%
+        full_join (table %>% select (topic1 = topic2, topic2 = topic1, rev_div = div)) %>%
         mutate (mean_div = (div + rev_div) / 2) %>%
         mutate (similarity = 1 / mean_div) %>%
-        filter (topic1_id < topic2_id)
+        filter (topic1 < topic2)
 
     ## compute clusters
-    suppressMessages (require (igraph))
     graph <-
         table %>%
-        select (from = topic1_id, to = topic2_id, weight = similarity) %>%
+        select (from = topic1, to = topic2, weight = similarity) %>%
         graph_from_data_frame (directed = FALSE)
-
-    ## graph <- graph %>% delete_edges (E(graph) [E(graph)$weight < grouping_threshold])
+    
+    threshold <- quantile (E(graph)$weight, probs = grouping_threshold)
+    graph <- graph %>% delete_edges (E(graph) [E(graph)$weight <= threshold])
     clusters <- graph %>% cluster_louvain %>% membership
+
+    array <- tibble (topic = names (clusters), group = clusters)
+    array <- topics %>% select (- word_dist) %>% left_join (array) %>% select (topic, everything())
 
     ## merge results
     result <-
         list (
-            similarity_matrix = table %>% select (topic1_id, topic2_id, divergence = div, similarity),
-            similarity_groups = tibble (topic_id = names (clusters), group_id= as.character (clusters))
+            matrix = table %>% select (topic1, topic2, divergence = mean_div, similarity),
+            groups = array
         )
 
     return (result)
 }
 
 
-#' Computes lexical specificities within a collection of topics.
-#' @param topic_word_prob A data.frame of three columns (topic_id, word, prob) giving the probability of a word given a topic.
-#' @post /specificity
-specificity <- function (topic_word_prob, dim_x = 1, dim_y = 2) {
+similarity_plot <- function (matrix, groups, edge_threshold = 0) {
+    ## matrix <- sim$matrix
+    ## groups <- sim$groups
 
-    suppressMessages (require (dplyr))
-    suppressMessages (require (tidyr))
-    suppressMessages (require (tibble))
-    suppressMessages (require (FactoMineR))
+    edges <-
+        matrix %>%
+        rename (weight = similarity)
+
+    vertices <-
+        groups %>%
+        group_by (corpus) %>%
+        mutate (prob = word_nb / sum (word_nb))
+
+    graph <- graph_from_data_frame (edges, directed = FALSE, vertices)
+
+    threshold <- quantile (E(graph)$weight, probs = edge_threshold)
+    graph <- graph %>% delete_edges (E(graph) [E(graph)$weight <= threshold])
     
-    data <- topic_word_prob %>% spread (word, prob)
-    topics_id <- data %>% pull (topic_id)
+    E(graph)$width <- E(graph)$weight %>% rescale (from = c (0, max (E(graph)$weight)), to = c (0, 20))
+    V(graph)$size <- V(graph)$prob %>% rescale (from = c (0, max (V(graph)$prob)), to = c (0, 30))
+    V(graph)$label.cex <- V(graph)$prob %>% rescale (from = c (0, max (V(graph)$prob)), to = c (0, 2))
+
+    colors <- brewer.pal (n = length (unique (V(graph)$group)), name = "Set1")
+    V(graph)$color <- colors [V(graph)$group]
+
+    ends <- graph %>% ends (E(graph), names = FALSE)
+    E(graph)$color <- ifelse (V(graph)$color [ends[,1]] == V(graph)$color [ends[,2]], V(graph)$color [ends[,1]], "#555555")
+
+    plot (
+        graph,
+        layout = graph %>% layout_with_fr,
+        vertex.label.color = "black"
+        )
+}
+
+
+#' @post /specificity
+specificity <- function (topics, dim_x = 1, dim_y = 2) {
+    ## topics <- top$topics
+    
+    ## extract word probs
+    dist <- topics$word_dist %>% strsplit (" ")
+    topic_word_prob <- lapply (1:length(dist), function (i) {
+        d <- split (dist[[i]], 1:length(dist[[i]]) %% 2 == 0)
+        tibble (topic = topics$topic[i], word = unname (d[[1]]), prob = as.numeric (unname (d[[2]])))
+    }) %>% bind_rows
+
+    ## normalise probs
+    topic_word_prob <-
+        topic_word_prob %>%
+        group_by (topic) %>%
+        mutate (prob = prob / sum (prob))
+
+    data <- topic_word_prob %>% rename (my_topic_field = topic) %>% spread (word, prob)
+    topic.list <- data %>% pull (my_topic_field)
     data <- data[-1]
 
     pca <- data %>% PCA (scale.unit = TRUE, graph = FALSE)
@@ -103,11 +152,36 @@ specificity <- function (topic_word_prob, dim_x = 1, dim_y = 2) {
 
     pca.topics <-
         tibble (
-            topic_id = topics_id,
+            topic = topic.list,
             dim_x = pca$ind$coord[, dim_x_str],
             dim_y = pca$ind$coord[, dim_y_str]
         )
 
-    return (list (topics_coord = pca.topics, words_coord = pca.words))
+    pca.topics <-
+        topics %>%
+        select (- word_dist) %>%
+        left_join (pca.topics) %>%
+        select (topic, everything())
+    
+    return (list (topics = pca.topics, words = pca.words))
 }
 
+
+specificity_plot <- function (topics, words, word_threshold = 0) {
+    ## topics <- spe$topics
+    ## words <- spe$words
+
+    l <- max (abs (append (topics$dim_x, topics$dim_y)))
+    threshold <- quantile (words$max_prob, probs = word_threshold)
+
+    topics %>%
+        ggplot () +
+        xlim (-l, l) + ylim (-l, l) +
+        geom_hline (yintercept = 0) +
+        geom_vline (xintercept = 0) +
+        geom_point (aes (x = dim_x, y = dim_y), size = l/10, shape = 1, color = "blue") +
+        geom_text (aes (x = dim_x, y = dim_y, label = topic), size = 6, color = "blue", lineheight = 0.75) +
+        geom_text_repel (data = words %>% filter (max_prob >= threshold), aes (label = word, x = dim_x*l, y = dim_y*l), size = 3, color = "black", force = 0.01, box.padding = 0, segment.alpha = 0) +
+        theme (legend.position = "none", panel.background = element_blank())
+
+}

@@ -11,6 +11,8 @@ data/res.json
 data/res_guardian_timeline.json
 data/uk-all-data.csv
 data/uk_words-topics.csv
+data/full/*
+data/raw/*
 
 test/testthat_test1.R
 
@@ -53,6 +55,9 @@ vignettes/*.pdf
 
 # Temporary files created by emacs
 *~
+*#
+.#*
+*.backup
 
 # R Environment Variables
 .Renviron
