@@ -1,7 +1,7 @@
 library (plumber)
 
-
-files <- dir ("src/R", pattern = ".R$", full.names = TRUE) ## Robin: '$' at the end of regexp to avoid emacs temp files such as "file.R~" in my case
+##setwd("/data/user/l/rlamarche/zPenelope/shiny/ClimateComponent")
+files <- dir ("src/R", pattern = ".R$", full.names = TRUE) ## '$' at the end of regexp to avoid emacs temp files such as "file.R~"
 
 r <- plumber$new()
 for (file in files) {
