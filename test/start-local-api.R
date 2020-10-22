@@ -1,6 +1,6 @@
 library (plumber)
 
-##setwd("/data/user/l/rlamarche/zPenelope/shiny/ClimateComponent")
+## setwd ("..")
 files <- dir ("src/R", pattern = ".R$", full.names = TRUE) ## '$' at the end of regexp to avoid emacs temp files such as "file.R~"
 
 r <- plumber$new()

@@ -1,6 +1,4 @@
 ## setwd ("..")
-## setwd("~/zPenelope/shiny/ClimateComponent")
-
 source ("./src/R/climate-data.R")
 source ("./src/R/topic-analyzer.R")
 source ("./src/R/event-analyzer.R")
