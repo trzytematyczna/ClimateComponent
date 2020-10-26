@@ -1,26 +1,31 @@
-# script name:
-# climate-data.R
+#* @apiTitle Climate Data
+#* @apiDescription This API provides access to metadata of three corpora about public debate on climate change: 79M tweets (social space), 4k articles from The Guardian (media space) and 2.6k speeches given at the UK parliament (political space). This data is made available by the H2020 ODYCCEUS Project (https://www.odycceus.eu/).
+#* @apiContact list (name = "API Support", email = "Monika.Ewa.Rakoczy@gmail.com")
+#* @apiContact list (name = "API Support", email = "Robin.Lamarche-Perrin@lip6.fr")
+#* @apiLicense list (name = "MIT License")
+#* @apiVersion 1.0
+#* @apiTag H2020_ODYCCEUS
 
 library (dplyr, quietly = TRUE, warn.conflicts = FALSE)
 library (readr, quietly = TRUE, warn.conflicts = FALSE)
 library (jsonlite, quietly = TRUE, warn.conflicts = FALSE)
 
 #* @get /ping
+#* Simple test function.
+#* @response 200 OK!
+#* @serializer json
 ping <- function () { return ("OK!"); }
 
-#* @post /request-sample
-request.sample <- function (req) {
-    reqs <- fromJSON (req$postBody)
-    get.data (reqs, sample = TRUE)
-}
-
-#* @post /request
-request <- function (req) {
-    reqs <- fromJSON (req$postBody)
-    get.data (reqs, sample = FALSE)
-}
 
 #* @post /timeline
+#* Get temporal evolution of the number of documents and words, optionally dividing them by topic.
+#* @param corpus The list of corpora of interest. Possible values are "guardian", "twitter", and/or "uk_parliament". By default, all three corpora are selected.
+#* @param timescale The timescale according to which dates are aggregated. Possible values are "day", "week", "month", or "year". Default value is "week".
+#* @param by_topic Should the timeline be divided by topic. Default value is "FALSE".
+#* @param doc_ids Should document ids be also retrieved. Default value is "FALSE".
+#* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
+#* @response timeline An array of observations, each given the number of documents and words for a given corpus at a given date (optionally, associated to a given topic).
+#* @serializer json
 timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
     
@@ -38,6 +43,13 @@ timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_i
 
 
 #* @post /topics
+#* Get lexical distributions of topics that have been learned on the three corpora.
+#* @param corpus The list of corpora of interest. Possible values are "guardian", "twitter", and/or "uk_parliament". By default, all three corpora are selected.
+#* @param topic The list of topics of interest. By default, all topics are selected.
+#* @param doc_ids Should document ids be also retrieved. Default value is "FALSE".
+#* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
+#* @response topics An array of observations, each given the lexical distribution of a given topic.
+#* @serializer json
 topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
 
@@ -51,6 +63,28 @@ topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE
     if (doc_ids) reqs$topics$vars <- c (reqs$topics$vars, "doc_ids")
 
     get.data (reqs, sample)
+}
+
+
+#* @post /metadata
+#* Get metadata from a sample of the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).
+#* @param req A structured JSON request describing what metadata should be retreived.
+#* @response res Resulting metadata from a sample of the three corpora.
+#* @serializer json
+metadata <- function (req) {
+    reqs <- fromJSON (req$postBody)
+    get.data (reqs, sample = FALSE)
+}
+
+
+#* @post /metadata-sample
+#* Get metadata from the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).
+#* @param req A structured JSON request describing what metadata should be retreived.
+#* @response res Resulting metadata from the three corpora.
+#* @serializer json
+metadata.sample <- function (req) {
+    reqs <- fromJSON (req$postBody)
+    get.data (reqs, sample = TRUE)
 }
 
 
