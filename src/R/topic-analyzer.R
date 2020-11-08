@@ -22,12 +22,14 @@ suppressMessages (library (ggrepel))
 ping <- function () { return ("OK!"); }
 
 
+
+
 #* @post /similarity
 #* Compute similarity network and similarity groups for a set of topics based on their lexical distributions.
 #* @param topics An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).
 #* @param grouping_threshold The quantile of links to remove from the network, depending on their similarity score, before computing the similarity groups. Default value is 0.
-#* @response network The list of similarity scores, one for each couple of topics.
-#* @response groups The list of similarity groups, one for each topic.
+# @response 200 groups The list of similarity groups, one for each topic.
+#* @content network The list of similarity scores, one for each couple of topics.
 #* @serializer json
 similarity <- function (topics, grouping_threshold = 0) {
     ## topics <- top$topics
@@ -123,13 +125,14 @@ similarity_plot <- function (network, groups, edge_threshold = 0) {
 }
 
 
+
+
 #* @post /specificity
 #* Compute specificity 2D map for a set of topics based on their lexical distributions using Principal Component Analysis (PCA).
 #* @param topics An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).
 #* @param dim_x Dimension of the PCA which should be used for the x-axis. Default value is 1.
 #* @param dim_y Dimension of the PCA which should be used for the y-axis. Default value is 2.
-#* @response topics The list of topics' coordinates in the 2D map.
-#* @response words The list of words' coordinates in the 2D map.
+# @response 200 topics The list of topics' coordinates in the 2D map. words The list of words' coordinates in the 2D map.
 #* @serializer json
 specificity <- function (topics, dim_x = 1, dim_y = 2) {
     ## topics <- top$topics
