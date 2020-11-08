@@ -28,7 +28,7 @@ library(tidytext)
 #* @post /events 
 events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends = F, trendthreshold = 0.02){
 
-  names(timeline)<-c("corpus","date","topic","doc_nb","word_nb")
+  # names(timeline)<-c("corpus","date","topic","doc_nb","word_nb")
   # cleaning the data - leaving only needed columns
   dtp<-as.data.frame(fromJSON(timeline))
   names(dtp)<-c("corpus","date","topic","doc_nb","word_nb")
@@ -162,7 +162,11 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   trends_trend <- trends_segments %>% 
     mutate(trend = ifelse(abs(diff)<trendthreshold, "same", ifelse(diff<0, "down", "up")))
   
-  result<-full_join(result,trends_trend, by.x=c("topic","x_axis_index"), by.y=c("topic","index"))
+  trends_selected <- trends_trend %>%
+    ungroup()%>%
+    select(topic,index,date,diff,trend)%>%
+    rename(x_axis_index=index)
+  result <- full_join(result,trends_selected, by=c("topic","x_axis_index","date"))#, by.y=c("topic","index","date"))
   
   }
   
