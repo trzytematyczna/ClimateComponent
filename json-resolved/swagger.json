@@ -33,7 +33,7 @@
     "/climate-data/timeline" : {
       "post" : {
         "summary" : "Get temporal evolution of the number of documents and words, optionally dividing them by topic.",
-        "description" : "asd",
+        "description" : "tbd",
         "parameters" : [ {
           "name" : "corpus",
           "in" : "query",
@@ -42,7 +42,7 @@
           "style" : "form",
           "explode" : true,
           "schema" : {
-            "$ref" : "#/components/schemas/CorpusEnum"
+            "$ref" : "#/components/schemas/corpusEnum"
           }
         }, {
           "name" : "timescale",
@@ -52,7 +52,7 @@
           "style" : "form",
           "explode" : true,
           "schema" : {
-            "$ref" : "#/components/schemas/timelineTimescaleQuery"
+            "$ref" : "#/components/schemas/timeEnum"
           }
         }, {
           "name" : "by_topic",
@@ -113,7 +113,7 @@
           "style" : "form",
           "explode" : true,
           "schema" : {
-            "$ref" : "#/components/schemas/CorpusEnum"
+            "$ref" : "#/components/schemas/corpusEnum"
           }
         }, {
           "name" : "topic",
@@ -123,7 +123,7 @@
           "style" : "form",
           "explode" : true,
           "schema" : {
-            "$ref" : "#/components/schemas/topicsTopicQuery"
+            "$ref" : "#/components/schemas/topicEnum"
           }
         }, {
           "name" : "doc_ids",
@@ -228,68 +228,21 @@
     },
     "/event-analyzer/events" : {
       "post" : {
-        "summary" : "Get timeline with highlited events",
+        "summary" : "Get timeline of the overall topic probability with additional information signifying the events (defined as higher probability values occuring in x consecuitive days)",
         "description" : " Returns higlighted events defined as document probability higher than event_min_prob lasting at least event_min_length",
-        "parameters" : [ {
-          "name" : "timeline",
-          "in" : "query",
-          "required" : true,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/timeline"
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/eventsRequest"
+              }
             }
-          }
-        }, {
-          "name" : "event_min_length",
-          "in" : "query",
-          "description" : "Minimum duration of the event in units in accordance with the aggregation unit of the input data (day/week/month)",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "integer",
-            "default" : 2
-          }
-        }, {
-          "name" : "event_min_prob",
-          "in" : "query",
-          "description" : "Minimum probability that above which event is defined",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "number",
-            "format" : "double",
-            "default" : 0.12
-          }
-        }, {
-          "name" : "trends",
-          "in" : "query",
-          "description" : "If TRUE additional column signifying trend is added to results",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "boolean"
-          }
-        }, {
-          "name" : "trendthreshold",
-          "in" : "query",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "number",
-            "format" : "double",
-            "default" : 0.02
-          }
-        } ],
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
-            "description" : "tdb result$data -  xaxis - index, yaxis - sum_probability, result$avg - horisontal line, result$segments - for a single rectangle xmin=seg_start, xmax=seg_end (x-axis bounds) ymin=min_prob, ymax=max_prob (y-axis bounds )",
+            "description" : "Returns  input data with additional columns - identifying the rows which belong to highlighted event with x and y-axis values for plotting",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -308,12 +261,15 @@
         "parameters" : [ {
           "name" : "id_text",
           "in" : "query",
-          "description" : "data with only doc_id and text already filtered by date and topic",
+          "description" : "filtered data (eg. by date and topic) containing two columns: \"doc_id\" (string, ids of documents), and \"text\" which will be used to get top words using tfidf",
           "required" : true,
           "style" : "form",
           "explode" : true,
           "schema" : {
-            "$ref" : "#/components/schemas/eventWordsIdTextQuery"
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/id_text"
+            }
           }
         }, {
           "name" : "top",
@@ -357,29 +313,16 @@
     "/topic-analyzer/similarity" : {
       "post" : {
         "summary" : " Compute similarity network and similarity groups for a set of topics based on their lexical distributions.",
-        "parameters" : [ {
-          "name" : "topics",
-          "in" : "query",
-          "description" : "An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).",
-          "required" : true,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "grouping_threshold",
-          "in" : "query",
-          "description" : "The quantile of links to remove from the network, depending on their similarity score, before computing the similarity groups. Default value is 0.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "number",
-            "format" : "double",
-            "default" : 0
-          }
-        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/similarityRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "description" : "The list of similarity groups, one for each topic.",
@@ -417,41 +360,16 @@
     "/topic-analyzer/specificity" : {
       "post" : {
         "summary" : " Compute specificity 2D map for a set of topics based on their lexical distributions using Principal Component Analysis (PCA).",
-        "parameters" : [ {
-          "name" : "topics",
-          "in" : "query",
-          "description" : "An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).",
-          "required" : true,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "dim_x",
-          "in" : "query",
-          "description" : "Dimension of the PCA which should be used for the x-axis. Default value is 1.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "number",
-            "format" : "double",
-            "default" : 1
-          }
-        }, {
-          "name" : "dim_y",
-          "in" : "query",
-          "description" : "Dimension of the PCA which should be used for the y-axis. Default value is 2.",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "number",
-            "format" : "double",
-            "default" : 2
-          }
-        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/specificityRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "description" : "The list of topics coordinates in the 2D map. response words The list of words coordinates in the 2D map.",
@@ -495,8 +413,9 @@
   },
   "components" : {
     "schemas" : {
-      "CorpusEnum" : {
+      "corpusEnum" : {
         "type" : "array",
+        "description" : "The list of corpora of interest. Possible values are \"guardian\", \"twitter\", and/or \"uk_parliament\". By default, all three corpora are selected.",
         "example" : "guardian",
         "items" : {
           "maxItems" : 3,
@@ -505,18 +424,154 @@
           "enum" : [ "guardian", "twitter", "uk_parliament" ]
         }
       },
-      "timelineTimescaleQuery" : {
+      "topicEnum" : {
+        "pattern" : "^[P|T|G][0-9]*$",
+        "type" : "string",
+        "example" : "[\"G10\",\"P1\",\"T15\",\"T3\"]"
+      },
+      "timeEnum" : {
         "type" : "string",
         "default" : "week",
         "enum" : [ "day", "week", "month", "year" ]
       },
-      "topicsTopicQuery" : {
-        "type" : "string"
+      "eventsRequest" : {
+        "required" : [ "timeline" ],
+        "type" : "object",
+        "properties" : {
+          "timeline" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/eventsRequest_timeline"
+            }
+          },
+          "event_min_length" : {
+            "type" : "integer",
+            "description" : "Minimum duration of the event in units in accordance with the aggregation unit of the input data (day/week/month)",
+            "default" : 2
+          },
+          "event_min_prob" : {
+            "type" : "number",
+            "description" : "Minimum probability that above which event is defined",
+            "format" : "double",
+            "default" : 0.12
+          },
+          "trends" : {
+            "type" : "boolean",
+            "description" : "If TRUE additional column signifying trend is added to results"
+          },
+          "trendthreshold" : {
+            "type" : "number",
+            "format" : "double",
+            "default" : 0.02
+          }
+        }
       },
-      "eventWordsIdTextQuery" : {
-        "type" : "array",
-        "items" : {
-          "$ref" : "#/components/schemas/eventWordsIdTextQuery_inner"
+      "similarityRequest" : {
+        "required" : [ "topics" ],
+        "type" : "object",
+        "properties" : {
+          "topics" : {
+            "type" : "array",
+            "description" : "An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).",
+            "example" : [ {
+              "corpus" : "guardian",
+              "topic" : "G1",
+              "doc_nb" : 593.1761,
+              "word_nb" : 467237.6,
+              "word_dist" : "ice 0.013221929 sea 0.0123077897 year 0.0103128713 temperatures 0.009060691 weather 0.0079418227"
+            }, {
+              "corpus" : "guardian",
+              "topic" : "G10",
+              "doc_nb" : 549.1506,
+              "word_nb" : 564816.9,
+              "word_dist" : "people 0.0161365791 world 0.0072241654"
+            } ],
+            "items" : {
+              "type" : "string",
+              "properties" : {
+                "corpus" : {
+                  "$ref" : "#/components/schemas/corpusEnum"
+                },
+                "topic" : {
+                  "$ref" : "#/components/schemas/topicEnum"
+                },
+                "doc_nb" : {
+                  "type" : "number",
+                  "format" : "double"
+                },
+                "word_nb" : {
+                  "type" : "number",
+                  "format" : "double"
+                },
+                "word_dist" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "grouping_threshold" : {
+            "type" : "number",
+            "description" : "The quantile of links to remove from the network, depending on their similarity score, before computing the similarity groups. Default value is 0.",
+            "format" : "double",
+            "default" : 0
+          }
+        }
+      },
+      "specificityRequest" : {
+        "required" : [ "topics" ],
+        "type" : "object",
+        "properties" : {
+          "topics" : {
+            "type" : "array",
+            "description" : "An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).",
+            "example" : [ {
+              "corpus" : "guardian",
+              "topic" : "G1",
+              "doc_nb" : 593.1761,
+              "word_nb" : 467237.6,
+              "word_dist" : "ice 0.013221929 sea 0.0123077897 year 0.0103128713 temperatures 0.009060691 weather 0.0079418227"
+            }, {
+              "corpus" : "guardian",
+              "topic" : "G10",
+              "doc_nb" : 549.1506,
+              "word_nb" : 564816.9,
+              "word_dist" : "people 0.0161365791 world 0.0072241654"
+            } ],
+            "items" : {
+              "type" : "string",
+              "properties" : {
+                "corpus" : {
+                  "$ref" : "#/components/schemas/corpusEnum"
+                },
+                "topic" : {
+                  "type" : "string"
+                },
+                "doc_nb" : {
+                  "type" : "number",
+                  "format" : "double"
+                },
+                "word_nb" : {
+                  "type" : "number",
+                  "format" : "double"
+                },
+                "word_dist" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "dim_x" : {
+            "type" : "number",
+            "description" : "Dimension of the PCA which should be used for the x-axis. Default value is 1.",
+            "format" : "double",
+            "default" : 1
+          },
+          "dim_y" : {
+            "type" : "number",
+            "description" : "Dimension of the PCA which should be used for the y-axis. Default value is 2.",
+            "format" : "double",
+            "default" : 2
+          }
         }
       },
       "inline_response_200" : {
@@ -548,7 +603,7 @@
         "required" : [ "topics" ],
         "type" : "object",
         "properties" : {
-          "timeline" : {
+          "topics" : {
             "type" : "array",
             "example" : [ {
               "corpus" : "guardian",
@@ -567,11 +622,10 @@
               "type" : "string",
               "properties" : {
                 "corpus" : {
-                  "type" : "string",
-                  "enum" : [ "guardian", "twitter", "uk_parliament" ]
+                  "$ref" : "#/components/schemas/corpusEnum"
                 },
                 "topic" : {
-                  "type" : "string"
+                  "$ref" : "#/components/schemas/topicEnum"
                 },
                 "doc_nb" : {
                   "type" : "number",
@@ -587,12 +641,6 @@
               }
             }
           }
-        }
-      },
-      "timeline" : {
-        "type" : "array",
-        "items" : {
-          "$ref" : "#/components/schemas/timeline"
         }
       },
       "inline_response_200_2" : {
@@ -757,13 +805,19 @@
           }
         }
       },
+      "id_text" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/id_text"
+        }
+      },
       "topicanalyzersimilarity_matrix" : {
         "properties" : {
           "topic1" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/topicEnum"
           },
           "topic2" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/topicEnum"
           },
           "divergence" : {
             "type" : "number",
@@ -788,10 +842,10 @@
       "topicanalyzerspecificity_topics" : {
         "properties" : {
           "topic" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/topicEnum"
           },
           "corpus" : {
-            "$ref" : "#/components/schemas/CorpusEnum"
+            "$ref" : "#/components/schemas/corpusEnum"
           },
           "doc_nb" : {
             "type" : "number",
@@ -821,21 +875,32 @@
           }
         }
       },
-      "eventWordsIdTextQuery_inner" : {
+      "eventsRequest_timeline" : {
         "properties" : {
-          "id" : {
-            "type" : "string"
+          "corpus" : {
+            "$ref" : "#/components/schemas/corpusEnum"
           },
-          "text" : {
-            "type" : "string"
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "topic" : {
+            "$ref" : "#/components/schemas/topicEnum"
+          },
+          "doc_nb" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "word_nb" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
       "inline_response_200_timeline" : {
         "properties" : {
           "corpus" : {
-            "type" : "string",
-            "enum" : [ "guardian", "twitter", "uk_parliament" ]
+            "$ref" : "#/components/schemas/corpusEnum"
           },
           "date" : {
             "type" : "string",
@@ -843,7 +908,7 @@
             "format" : "date"
           },
           "topic" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/topicEnum"
           },
           "doc_nb" : {
             "type" : "number",
@@ -858,11 +923,10 @@
       "inline_response_200_2_result" : {
         "properties" : {
           "corpus" : {
-            "type" : "string",
-            "enum" : [ "guardian", "twitter", "uk_parliament" ]
+            "$ref" : "#/components/schemas/corpusEnum"
           },
           "topic" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/topicEnum"
           },
           "doc_nb" : {
             "type" : "number",
@@ -944,8 +1008,8 @@
           }
         }
       },
-      "eventResponse" : {
-        "description" : "tdb result$data -  xaxis - index, yaxis - sum_probability, result$avg - horisontal line, result$segments - for a single rectangle xmin=seg_start, xmax=seg_end (x-axis bounds) ymin=min_prob, ymax=max_prob (y-axis bounds )",
+      "eventsResponse" : {
+        "description" : "Returns  input data with additional columns - identifying the rows which belong to highlighted event with x and y-axis values for plotting",
         "content" : {
           "application/json" : {
             "schema" : {
