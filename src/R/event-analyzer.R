@@ -20,7 +20,7 @@ library(tidytext)
 
 
 #* Returns higlighted events defined as document probability higher than event_min_prob lasting at least event_min_length; output:  result$data -  #xaxis - index, yaxis - sum_probability, result$avg - horisontal line, result$segments - for a single rectangle: xmin=seg_start, xmax=seg_end (x-axis bounds) ymin=min_prob, ymax=max_prob (y-axis bounds )
-#* @param date_topic_prob
+#* @param timeline
 #* @param event_min_length Minimum duration of the event in units in accordance with the aggregation unit of the input data (day/week/month)
 #* @param event_min_prob Minimum probability that above which event is defined
 #* @param trends 
@@ -31,6 +31,8 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   # names(timeline)<-c("corpus","date","topic","doc_nb","word_nb")
   # cleaning the data - leaving only needed columns
   dtp<-as.data.frame(fromJSON(timeline))
+  # dtp<-as.data.frame(fromJSON(timeline))
+  # dtp<-timeline
   names(dtp)<-c("corpus","date","topic","doc_nb","word_nb")
   # dtp<- dtp %>% 
   #   select(date,topic,doc_nb) %>%  
@@ -48,7 +50,6 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   date_topic_prob <- date_topic_prob%>%
     mutate(sum_probability=doc_nb/doc_sums) %>%
     select(date,topic,sum_probability)
-  
   
   #each time slot (day/month/week) indexed  with same number (all rows with probs of different topics)
   data <- date_topic_prob %>%
@@ -112,8 +113,7 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
     mutate(seg_len=seg_end-seg_start+1)%>%
     filter(seg_len>=event_min_length)   ##length of period of the event used here -- defines how long the event supposed to last (in time slot defined by aggregation from data)
 
-  
-  temp <- merge(timeline,data, by=c("date","topic"))
+  temp <- merge(dtp,data, by=c("date","topic"))
   non_unitary_filt <- non_unitary_segments_data %>% select(-segment)
    
   # all_res <- left_join(temp, non_unitary_filt, by = c("topic")) 
@@ -137,7 +137,7 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
            topic_mean=mean, 
            topic_median=median)
   
-  
+
   if(trends){
   trends_segments <- non_unitary_segments_data %>%
     group_by(topic,segment) %>%
@@ -197,13 +197,13 @@ eventwords<-function(id_text, top = 10){
   #caluculate tfidf
   tfidf_data <- wordsFreq %>%
     bind_tf_idf(word, doc_id, n) %>%
-    arrange(desc(doc_id, tf_idf))  
+    arrange(desc(tf_idf))  
   
   #select top words
   res <- tfidf_data %>% 
-    select(word) %>% 
-    top_n(top)
-  
+    top_n(n = top, wt = tf_idf)%>%
+    select(word) 
+    
   return(res)
   
 }

@@ -127,13 +127,13 @@ similarity_plot <- function (network, groups, edge_threshold = 0) {
 
 
 
-#* @post /specificity
 #* Compute specificity 2D map for a set of topics based on their lexical distributions using Principal Component Analysis (PCA).
 #* @param topics An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).
 #* @param dim_x Dimension of the PCA which should be used for the x-axis. Default value is 1.
 #* @param dim_y Dimension of the PCA which should be used for the y-axis. Default value is 2.
 # @response 200 topics The list of topics' coordinates in the 2D map. words The list of words' coordinates in the 2D map.
 #* @serializer json
+#* @post /specificity
 specificity <- function (topics, dim_x = 1, dim_y = 2) {
     ## topics <- top$topics
     

@@ -19,7 +19,6 @@ ping <- function () { return ("OK!"); }
 
 
 
-#* @post /timeline
 #* Get temporal evolution of the number of documents and words, optionally dividing them by topic.
 #* @param corpus The list of corpora of interest. Possible values are "guardian", "twitter", and/or "uk_parliament". By default, all three corpora are selected.
 #* @param timescale The timescale according to which dates are aggregated. Possible values are "day", "week", "month", or "year". Default value is "week".
@@ -28,6 +27,7 @@ ping <- function () { return ("OK!"); }
 #* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
 # @response 200 timeline An array of observations, each given the number of documents and words for a given corpus at a given date (optionally, associated to a given topic).
 #* @serializer json
+#* @post /timeline
 timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
     
@@ -45,7 +45,6 @@ timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_i
 
 
 
-#* @post /topics
 #* Get lexical distributions of topics that have been learned on the three corpora.
 #* @param corpus The list of corpora of interest. Possible values are "guardian", "twitter", and/or "uk_parliament". By default, all three corpora are selected.
 #* @param topic The list of topics of interest. By default, all topics are selected.
@@ -53,6 +52,7 @@ timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_i
 #* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
 # @response topics An array of observations, each given the lexical distribution of a given topic.
 #* @serializer json
+#* @post /topics
 topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
 
@@ -70,11 +70,11 @@ topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE
 
 
 
-#* @post /metadata
 #* Get metadata from a sample of the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).
 #* @param req A structured JSON request describing what metadata should be retreived.
 # @response res Resulting metadata from a sample of the three corpora.
 #* @serializer json
+#* @post /metadata
 metadata <- function (req) {
     reqs <- fromJSON (req$postBody)
     get.data (reqs, sample = FALSE)
@@ -82,11 +82,11 @@ metadata <- function (req) {
 
 
 
-#* @post /metadata-sample
 #* Get metadata from the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).
 #* @param req A structured JSON request describing what metadata should be retreived.
 # @response res Resulting metadata from the three corpora.
 #* @serializer json
+#* @post /metadata-sample
 metadata.sample <- function (req) {
     reqs <- fromJSON (req$postBody)
     get.data (reqs, sample = TRUE)
