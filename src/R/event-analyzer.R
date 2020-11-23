@@ -20,19 +20,19 @@ library(tidytext)
 
 
 #* Returns higlighted events defined as document probability higher than event_min_prob lasting at least event_min_length; output:  result$data -  #xaxis - index, yaxis - sum_probability, result$avg - horisontal line, result$segments - for a single rectangle: xmin=seg_start, xmax=seg_end (x-axis bounds) ymin=min_prob, ymax=max_prob (y-axis bounds )
-#* @param timeline
+#* @param timeline An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).
 #* @param event_min_length Minimum duration of the event in units in accordance with the aggregation unit of the input data (day/week/month)
 #* @param event_min_prob Minimum probability that above which event is defined
 #* @param trends 
 #* @param trendsthreshold a threshold value which states what is the minimal difference between two aggregation units (days/weeks/etc) which qualifies upward and downward trend
 #* @post /events 
+#* @serializer json
 events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends = F, trendthreshold = 0.02){
 
   # names(timeline)<-c("corpus","date","topic","doc_nb","word_nb")
   # cleaning the data - leaving only needed columns
-  dtp<-as.data.frame(fromJSON(timeline))
   # dtp<-as.data.frame(fromJSON(timeline))
-  # dtp<-timeline
+  dtp<-timeline
   names(dtp)<-c("corpus","date","topic","doc_nb","word_nb")
   # dtp<- dtp %>% 
   #   select(date,topic,doc_nb) %>%  
