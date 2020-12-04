@@ -23,3 +23,8 @@ printf "\n\n"
 printf "CALL climate-data FOR timeline\n"
 curl -s http://localhost:8000/climate-data/timeline -d '{"corpus":"twitter", "timescale":"month", "by_topic":"TRUE", "sample":"TRUE"}' | head -c1000
 printf "\n\n"
+
+
+printf "PIPE climate-data AND event-analyzer FOR event discovery\n"
+curl -X POST -H "Content-type: application/json" -H "Accept: application/json" http://localhost:8000/climate-data/timeline -d '{"corpus":"twitter", "timescale":"month", "by_topic":"TRUE", "sample":"TRUE"}' | curl  -X POST -H "Content-type: application/json" -H "Accept: application/json" -d '@-' "http://127.0.0.1:8000/event-analyzer/events"
+printf "\n\n"

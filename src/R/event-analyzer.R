@@ -7,6 +7,15 @@ library(jsonlite)
 library(stringr)
 library(tidytext)
 
+
+
+#* @get /ping
+#* Simple test function.
+#* @response 200 OK!
+#* @serializer json
+ping <- function () { return ("OK!"); }
+
+
 #* Returns dummy event data in json
 #* @get /evdoc 
 # evdoc<-function(){
@@ -15,6 +24,7 @@ library(tidytext)
   # dat<-datajson$timeline
   # data<-data.frame(matrix(unlist(dat), nrow=length(dat), byrow=T))
   # return(datajson)
+
 # }
 
 
@@ -29,11 +39,18 @@ library(tidytext)
 #* @serializer json
 events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends = F, trendthreshold = 0.02){
 
-  # names(timeline)<-c("corpus","date","topic","doc_nb","word_nb")
-  # cleaning the data - leaving only needed columns
-  # dtp<-as.data.frame(fromJSON(timeline))
-  dtp<-timeline
+  
+  # Is it an already parsed set of arguments (e.g. using curl and application/json content)
+  if (is.data.frame(timeline)) {
+    dtp<-timeline
+    } else {
+      dtp<-fromJSON(timeline)$timeline
+    }
+
   names(dtp)<-c("corpus","date","topic","doc_nb","word_nb")
+  
+  print(head(dtp))
+
   # dtp<- dtp %>% 
   #   select(date,topic,doc_nb) %>%  
   #   mutate(topic = str_replace_all(topic, 'G',"")) %>%  
@@ -210,114 +227,42 @@ eventwords<-function(id_text, top = 10){
 
 
 
+# data<-read_csv("./data/sample/guardian.author.date.csv")
 
-# trends<-function(date_topic_prob, event_min_prob = 0.12, event_min_length = 2, trendthreshold = 0.02){
-#   
-#   date_topic_prob<-as.data.frame(fromJSON(date_topic_prob))
-#   names(date_topic_prob)<-c("date","topic","sum_probability")
-#   
-#   #each time slot (day/month/week) indexed  with same number (all rows with probs of different topics)
-#   data <- date_topic_prob %>%
-#     group_by(topic) %>%
-#     mutate(index=dplyr::row_number()) #%>%
-#   
-#   #creating mean and median for each topic for data
-#   avg_data <- data %>%
-#     group_by(topic) %>%
-#     summarise(mean=mean(sum_probability),
-#               median=median(sum_probability))
-#   
-#   
-#   segments_data <- data %>%
-#     group_modify(function(d, ...) {
-#       # Compute average
-#       avg_probability <- d %>% pull(sum_probability) %>% mean()
-#       min_probability <- d %>% pull(sum_probability) %>% min()
-#       max_probability <- d %>% pull(sum_probability) %>% max()
-#       # Create mask
-#       with_mask <- d %>% mutate(mask = sum_probability > avg_probability)
-#       # Find segments
-#       with_segments <- with_mask %>%
-#         mutate(segment = ifelse(mask, 1, 0))
-#       current_segment <- 1
-#       for (n in 2:nrow(with_segments)) {
-#         if (with_segments[n, ]$mask) {
-#           if (with_segments[n-1, ]$segment > 0) {
-#             with_segments[n, ]$segment <- current_segment
-#           } else {
-#             current_segment <- current_segment + 1
-#             with_segments[n, ]$segment <- current_segment
-#           }
-#         }
-#       }
-#       # Find segments start/end points
-#       only_segments <- with_segments %>%
-#         filter(segment > event_min_prob)
-#       
-#       coord_segments_min <- only_segments %>%
-#         group_by(segment) %>%
-#         filter(index == min(index)) %>%
-#         mutate(seg_start=index) %>%
-#         ungroup() %>%
-#         select(seg_start, segment)
-#       coord_segments_max <- only_segments %>%
-#         group_by(segment) %>%
-#         filter(index == max(index)) %>%
-#         mutate(seg_end=index) %>%
-#         ungroup() %>%
-#         select(seg_end) ##segment already in min tibble
-#       all_coords <- cbind(coord_segments_min, coord_segments_max) %>%
-#         mutate(seg_end=seg_end+1) %>% ### for geom_step --> visualisation moved by 1
-#         mutate(min_prob = min_probability,
-#                max_prob = max_probability)
-#       
-#       all_coords
-#     })
-#   
-#   ##seg_len is length of the segment-1 (!) so one-time peaks will have seg_len = 0
-#   non_unitary_segments_data <- segments_data %>%
-#     mutate(seg_len=seg_end-seg_start)%>%
-#     filter(seg_len>event_min_length)
-#   
-#   
-#   trends_segments <- non_unitary_segments_data %>%
-#     group_by(topic,segment) %>%
-#     group_modify(function(d, ...) {
-#       
-#       avg_prob <- avg_data %>% 
-#         filter(topic == d$topic) %>%
-#         pull(mean)
-#       
-#       data %>%
-#         filter(topic == d$topic) %>%
-#         ungroup() %>%
-#         select(-topic) %>% 
-#         filter(index >= d$seg_start,index <= d$seg_end) %>%
-#         mutate(diff = sum_probability - lag(sum_probability, n=1, default= avg_prob))
-#       # data %>% filter_at(index, between(.,d$seg_start, d$seg_end))
-#     }, keep = TRUE)
-#   
-#   trends_area <- trends_segments %>% 
-#     group_by(topic,segment) %>%
-#     summarise(area = sum(sum_probability))
-#   trends_trend <- trends_segments %>% 
-#     mutate(trend = ifelse(abs(diff)<trendthreshold, "same", ifelse(diff<0, "down", "up")))
-#   
-#   
-#   # Prepare labels for dates
-#   # label_dates <- data %>%
-#   #   filter(topic == 1) %>%
-#   #   pull(date) %>%
-#   #   as.character()
-#   # num_of_indices <- data %>%
-#   #   pull(index) %>%
-#   #   max()
-#   
-#   result<-list()
-#   
-#   result$data<-data #xaxis - index, yaxis - sum_probability
-#   result$avg<-avg_data   #horisontal line
-#   result$trends<-trends_trend
-# }
-# 
+#* Returns metadata (including text!) of tweets/speeches/articles given the selected ids
+#* @param ids 
+#* @post /texts 
+#* @serializer json
+texts<-function(ids, corpus){
+  
+  # Is it an already parsed set of arguments (e.g. using curl and application/json content)
+  if (is.data.frame(ids)) {
+    data<-ids
+  } else {
+    data<-fromJSON(ids)$timeline
+  }
+  names(data)<-c("corpus","date","topic","doc_nb","word_nb", "doc_ids")
+  
+  unnested_dfif <- data %>% 
+    select(date, doc_ids) %>%
+    group_split(date) %>%
+    map_dfr(~ .x %>% 
+              mutate_at(-1, ~ list(unlist(.))) %>% 
+              unnest(c(doc_ids)))
+  ids_string<-unnested_dfif %>% pull(doc_ids) %>% paste(collapse = "|")
+   
+  # x<-paste0("xargs -I {} grep \"^{}\" data/",corpus,"-all-data.csv < ", ids$doc_ids)
+  # cat(x)
+  xcommand<-paste('grep -P \"', ids_string,'\" ./data/',corpus,'-data-events.csv ')
+  
+ system_res <-system(xcommand,intern = TRUE)
+ # write_csv("./data/events-res2.csv",as.data.frame(system_res))
+ df<-as.data.frame(system_res)
+ write_csv(df,"./data/events-res2.csv", col_names = F, quote_escape = F)
+  # read.table(text=res,col.names=c("doc_id","type","url","authors","authors_nb","section","tags","tags_nb","date_published","share_count","comment_nb","title","description","text","length","t_1","t_2","t_3","t_4","t_5","t_6","t_7","t_8","t_9","t_10","date"))
+  # read.table(text=gsub("(?<=[a-z])\\s+", "\n", x, perl=TRUE), 
+             # header=FALSE, col.names = c("id", "name"))
+  return(system_res)  
+}
 
+#"doc_id","url","authors","title","description","text","length","t_1","t_2","t_3","t_4","t_5","t_6","t_7","t_8","t_9","t_10","date"

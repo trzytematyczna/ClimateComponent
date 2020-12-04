@@ -23,3 +23,8 @@ printf "\n\n"
 printf "CALL climate-data FOR timeline\n"
 curl -s https://penelope.huma-num.fr/tools/climate-data/timeline -d '{"corpus":"twitter", "timescale":"month", "by_topic":"TRUE"}' | head -c1000
 printf "\n\n"
+
+
+printf "PIPE climate-data AND event-analyzer FOR event discovery\n"
+curl -X POST -H "Content-type: application/json" -H "Accept: application/json" https://penelope.huma-num.fr/tools/climate-data/timeline -d '{"corpus":"twitter", "timescale":"month", "by_topic":"TRUE", "sample":"TRUE"}' | curl  -X POST -H "Content-type: application/json" -H "Accept: application/json" -d '@-' "https://penelope.huma-num.fr/tools/event-analyzer/events"
+printf "\n\n"
