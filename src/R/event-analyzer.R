@@ -1,11 +1,12 @@
 
 library(dplyr)
-library(ggplot2)
+# library(ggplot2)
 library(readr)
 library(tidyr)
 library(jsonlite)
 library(stringr)
 library(tidytext)
+library(purrr)
 
 
 
@@ -228,12 +229,14 @@ eventwords<-function(id_text, top = 10){
 
 
 # data<-read_csv("./data/sample/guardian.author.date.csv")
+# data<-read_csv("./data/sample/uk_parliament.author.date.csv")
 
-#* Returns metadata (including text!) of tweets/speeches/articles given the selected ids
-#* @param ids 
+#* Returns all metadata (including text!) of tweets/speeches/articles given the selected ids
+#* @param ids metadata structure from function /climate-data/timeline (columns: "corpus","date","topic","doc_nb","word_nb", "doc_ids")
+#* @param corpus
 #* @post /texts 
 #* @serializer json
-texts<-function(ids, corpus){
+texts<-function(ids, corpus = "guardian"){
   
   # Is it an already parsed set of arguments (e.g. using curl and application/json content)
   if (is.data.frame(ids)) {
@@ -253,16 +256,38 @@ texts<-function(ids, corpus){
    
   # x<-paste0("xargs -I {} grep \"^{}\" data/",corpus,"-all-data.csv < ", ids$doc_ids)
   # cat(x)
-  xcommand<-paste('grep -P \"', ids_string,'\" ./data/',corpus,'-data-events.csv ')
-  
+  xcommand<-paste0('grep -P \"', ids_string,'\" ./data/full/full-',corpus,'.csv ')
+  xcommand<-paste0('grep -P \"', ids_string,'\" ./assign-1.csv')
  system_res <-system(xcommand,intern = TRUE)
- # write_csv("./data/events-res2.csv",as.data.frame(system_res))
- df<-as.data.frame(system_res)
- write_csv(df,"./data/events-res2.csv", col_names = F, quote_escape = F)
-  # read.table(text=res,col.names=c("doc_id","type","url","authors","authors_nb","section","tags","tags_nb","date_published","share_count","comment_nb","title","description","text","length","t_1","t_2","t_3","t_4","t_5","t_6","t_7","t_8","t_9","t_10","date"))
-  # read.table(text=gsub("(?<=[a-z])\\s+", "\n", x, perl=TRUE), 
-             # header=FALSE, col.names = c("id", "name"))
-  return(system_res)  
-}
+ df<-as.data.frame(system_res, stringsAsFactors = F)
+ if(corpus == "guardian"){
+  
+   result_data<- read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "type", "url", 
+                                                                                                                    "authors","authors_nb",
+                                                                                                                    "section","tags", "tags_nb",
+                                                                                                                    "date_published","share_count",
+                                                                                                                    "comment_nb","title", 
+                                                                                                                    "description","text", "length",
+                                                                                                                    "t_1", "t_2", "t_3", "t_4", 
+                                                                                                                    "t_5", "t_6", "t_7", "t_8", 
+                                                                                                                    "t_9", "t_10", "date"))
+ }
+ else if(corpus == "uk_parliament"){
+   result_data<-read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "date", 
+                                                                                                                    "discussion_title","name",
+                                                                                                                    "party","speaker_id","text",
+                                                                                                                    "length","t_1","t_2","t_3",
+                                                                                                                    "t_4","t_5","t_6","t_7",
+                                                                                                                    "t_8","t_9","t_10"))
+ }
+ else{
+   result_data<-read.table(df$system_res, sep =",", header = F, stringsAsFactors = FALSE,  col.names = c("doc_id","date","retweetcount",
+                                                                                                         "from_user_id","from_user_name",
+                                                                                                                    "from_user_followercount",
+                                                                                                                    "text","t_1","t_2","t_3",
+                                                                                                                    "t_4","t_5","t_6","t_7",
+                                                                                                                    "t_8","t_9"))
+ }
 
-#"doc_id","url","authors","title","description","text","length","t_1","t_2","t_3","t_4","t_5","t_6","t_7","t_8","t_9","t_10","date"
+   return(result_data)  
+}
