@@ -12,6 +12,7 @@ data/res_guardian_timeline.json
 data/uk-all-data.csv
 data/uk_words-topics.csv
 data/full/*
+data/full.zip
 data/raw/*
 
 test/testthat_test1.R
