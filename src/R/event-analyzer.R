@@ -256,7 +256,7 @@ texts<-function(ids, corpus = "guardian"){
    
   # x<-paste0("xargs -I {} grep \"^{}\" data/",corpus,"-all-data.csv < ", ids$doc_ids)
   # cat(x)
-  xcommand<-paste0('grep -P \"', ids_string,'\" ./data/content/',corpus,'content.csv ')
+  xcommand<-paste0('grep -P \"', ids_string,'\" ./data/content/',corpus,'.content.csv ')
  system_res <-system(xcommand,intern = TRUE)
  df<-as.data.frame(system_res, stringsAsFactors = F)
  if(corpus == "guardian"){
