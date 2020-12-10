@@ -43,10 +43,14 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   
   # Is it an already parsed set of arguments (e.g. using curl and application/json content)
   if (is.data.frame(timeline)) {
+    print(timeline)
     dtp<-timeline
-    } else {
-      dtp<-fromJSON(timeline)$timeline
-    }
+    print(dtp)
+  } else {
+    print(timeline)
+    dtp<-fromJSON(timeline)$timeline
+    print(dtp)
+  }
 
   names(dtp)<-c("corpus","date","topic","doc_nb","word_nb")
   
