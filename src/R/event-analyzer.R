@@ -36,8 +36,8 @@ ping <- function () { return ("OK!"); }
 #* @param event_min_prob Minimum probability that above which event is defined
 #* @param trends 
 #* @param trendsthreshold a threshold value which states what is the minimal difference between two aggregation units (days/weeks/etc) which qualifies upward and downward trend
-#* @post /events 
 #* @serializer json
+#* @post /events 
 events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends = F, trendthreshold = 0.02){
 
   
@@ -234,8 +234,8 @@ eventwords<-function(id_text, top = 10){
 #* Returns all metadata (including text!) of tweets/speeches/articles given the selected ids
 #* @param ids metadata structure from function /climate-data/timeline (columns: "corpus","date","topic","doc_nb","word_nb", "doc_ids")
 #* @param corpus
-#* @post /texts 
 #* @serializer json
+#* @post /texts 
 texts<-function(ids, corpus = "guardian"){
   
   # Is it an already parsed set of arguments (e.g. using curl and application/json content)
