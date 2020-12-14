@@ -85,7 +85,7 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   
   #enumerating each slot with event with different index per topic (operates on each group from groupby!)
   segments_data <- data %>%
-    group_modify(function(d, ...) {
+    dplyr::group_modify(function(d, ...) {
       # Compute average
       avg_probability <- d %>% pull(sum_probability) %>% mean()
       min_probability <- d %>% pull(sum_probability) %>% min()
@@ -265,16 +265,15 @@ texts<-function(ids, corpus = "guardian"){
  df<-as.data.frame(system_res, stringsAsFactors = F)
  if(corpus == "guardian"){
   
-   result_data<- read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "type", "url", 
-                                                                                                                    "authors","authors_nb",
-                                                                                                                    "section","tags", "tags_nb",
-                                                                                                                    "date_published","share_count",
-                                                                                                                    "comment_nb","title", 
-                                                                                                                    "description","text", "length",
-                                                                                                                    "t_1", "t_2", "t_3", "t_4", 
-                                                                                                                    "t_5", "t_6", "t_7", "t_8", 
-                                                                                                                    "t_9", "t_10", "date"))
+   result_data<- read.table(text = df$system_res, sep =",", header = F, 
+                            stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "type", "url", "authors","authors_nb","section","tags","tags_nb",
+                                                                                  "date_published","share_count","comment_nb","title","description","text", "length",
+                                                                                  "t_1", "t_2", "t_3", "t_4","t_5", "t_6", "t_7", "t_8","t_9", "t_10", "date"))
  }
+ # c("doc_id","date","author","interactor","text","topics","additional" 
+   # "type", "url", "authors","authors_nb","section","tags","tags_nb",
+    # "date_published","share_count","comment_nb","title","description","text", "length",
+    # "t_1", "t_2", "t_3", "t_4","t_5", "t_6", "t_7", "t_8","t_9", "t_10", "date")
  else if(corpus == "uk_parliament"){
    result_data<-read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "date", 
                                                                                                                     "discussion_title","name",
