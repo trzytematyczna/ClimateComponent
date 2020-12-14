@@ -14,7 +14,7 @@ data/uk_words-topics.csv
 data/full/*
 data/full.zip
 data/raw/*
-
+data/content/*
 test/testthat_test1.R
 
 # History files
