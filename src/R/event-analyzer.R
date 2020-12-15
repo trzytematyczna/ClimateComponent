@@ -14,7 +14,11 @@ library(purrr)
 #* Simple test function.
 #* @response 200 OK!
 #* @serializer json
-ping <- function () { return ("OK!"); }
+ping <- function () {
+  ip = as.data.frame(installed.packages()[,c(1,3:4)])
+  ip = ip[is.na(ip$Priority),1:2,drop=FALSE]
+  return (ip)
+  }
 
 
 #* Returns dummy event data in json
