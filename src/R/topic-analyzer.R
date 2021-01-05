@@ -75,7 +75,7 @@ similarity <- function (topics, grouping_threshold = 0) {
     graph <- graph %>% delete_edges (E(graph) [E(graph)$weight <= threshold])
     clusters <- graph %>% cluster_louvain %>% membership
 
-    array <- tibble (topic = names (clusters), group = clusters)
+    array <- tibble (topic = names (clusters), group = as.numeric (clusters))
     array <- topics %>% select (- word_dist) %>% left_join (array) %>% select (topic, everything())
 
     ## merge results
@@ -192,17 +192,19 @@ specificity_plot <- function (topics, words, word_threshold = 0) {
     ## topics <- spe$topics
     ## words <- spe$words
 
-    l <- max (abs (append (topics$dim_x, topics$dim_y)))
+    m <- max (sqrt (topics$dim_x^2 + topics$dim_y^2))
+    topics$dim_x <- topics$dim_x / m
+    topics$dim_y <- topics$dim_y / m
     threshold <- quantile (words$max_prob, probs = word_threshold)
 
     topics %>%
         ggplot () +
-        xlim (-l, l) + ylim (-l, l) +
+        xlim (-1, 1) + ylim (-1, 1) +
         geom_hline (yintercept = 0) +
         geom_vline (xintercept = 0) +
-        geom_point (aes (x = dim_x, y = dim_y), size = l/10, shape = 1, color = "blue") +
+        geom_point (aes (x = dim_x, y = dim_y), size = 15, shape = 1, color = "blue") +
         geom_text (aes (x = dim_x, y = dim_y, label = topic), size = 6, color = "blue", lineheight = 0.75) +
-        geom_text_repel (data = words %>% filter (max_prob >= threshold), aes (label = word, x = dim_x*l, y = dim_y*l), size = 3, color = "black", force = 0.01, box.padding = 0, segment.alpha = 0) +
+        geom_text_repel (data = words %>% filter (max_prob >= threshold), aes (label = word, x = dim_x, y = dim_y), size = 3, color = "black", force = 0.01, box.padding = 0, segment.alpha = 0) +
         theme (legend.position = "none", panel.background = element_blank())
 
 }
