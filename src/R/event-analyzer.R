@@ -246,7 +246,7 @@ eventwords<-function(id_text, top = 10){
 #* @param corpus
 #* @serializer json
 #* @post /texts 
-texts<-function(ids, corpus = "guardian"){
+texts<-function(ids, corpus = "guardian", optional = TRUE){
   
   # Is it an already parsed set of arguments (e.g. using curl and application/json content)
   if (is.data.frame(ids)) {
@@ -258,10 +258,9 @@ texts<-function(ids, corpus = "guardian"){
   
   unnested_dfif <- data %>% 
     select(date, doc_ids) %>%
-    group_split(date) %>%
-    map_dfr(~ .x %>% 
-              mutate_at(-1, ~ list(unlist(.))) %>% 
-              unnest(c(doc_ids)))
+    separate_rows(doc_ids,sep = " ")
+    
+  
   ids_string<-unnested_dfif %>% pull(doc_ids) %>% paste(collapse = "|")
    
   # x<-paste0("xargs -I {} grep \"^{}\" data/",corpus,"-all-data.csv < ", ids$doc_ids)
@@ -271,31 +270,56 @@ texts<-function(ids, corpus = "guardian"){
  df<-as.data.frame(system_res, stringsAsFactors = F)
  if(corpus == "guardian"){
   
-   result_data<- read.table(text = df$system_res, sep =",", header = F, 
+   sys_data<- read.table(text = df$system_res, sep =",", header = F, 
                             stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "type", "url", "authors","authors_nb","section","tags","tags_nb",
                                                                                   "date_published","share_count","comment_nb","title","description","text", "length",
                                                                                   "t_1", "t_2", "t_3", "t_4","t_5", "t_6", "t_7", "t_8","t_9", "t_10", "date"))
+   
+  if(optional){
+    result_data<- sys_data %>% select(doc_id, text, date, authors)
+    result_data$additional<-paste0("\"",paste(sys_data$title, sys_data$description,sys_data$t_1, sys_data$t_2, sys_data$t_3, sys_data$t_4,sys_data$t_5, sys_data$t_6, 
+                   sys_data$t_7, sys_data$t_8,sys_data$t_9, sys_data$t_10,sep='", "'), "\"")
+   }
  }
- # c("doc_id","date","author","interactor","text","topics","additional" 
+ # c(doc_id","date","author","interactor","text","topics","additional" 
    # "type", "url", "authors","authors_nb","section","tags","tags_nb",
     # "date_published","share_count","comment_nb","title","description","text", "length",
     # "t_1", "t_2", "t_3", "t_4","t_5", "t_6", "t_7", "t_8","t_9", "t_10", "date")
  else if(corpus == "uk_parliament"){
-   result_data<-read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "date", 
+   sys_data<-read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "date", 
                                                                                                                     "discussion_title","name",
                                                                                                                     "party","speaker_id","text",
                                                                                                                     "length","t_1","t_2","t_3",
                                                                                                                     "t_4","t_5","t_6","t_7",
                                                                                                                     "t_8","t_9","t_10"))
+   if(optional){
+     result_data<- sys_data %>% select(doc_id, text, date, name)
+     result_data %>% rename(author = name)
+     result_data$additional<-paste0("\"",paste(sys_data$, sys_data$party,sys_data$speaker_id,
+                                               sys_data$t_1, sys_data$t_2, sys_data$t_3, sys_data$t_4,sys_data$t_5, sys_data$t_6, 
+                                               sys_data$t_7, sys_data$t_8,sys_data$t_9, sys_data$t_10,sep='", "'), "\"")
+   }
  }
  else{
-   result_data<-read.table(df$system_res, sep =",", header = F, stringsAsFactors = FALSE,  col.names = c("doc_id","date","retweetcount",
+   sys_data<-read.table(df$system_res, sep =",", header = F, stringsAsFactors = FALSE,  col.names = c("doc_id","date","retweetcount",
                                                                                                          "from_user_id","from_user_name",
                                                                                                                     "from_user_followercount",
                                                                                                                     "text","t_1","t_2","t_3",
                                                                                                                     "t_4","t_5","t_6","t_7",
                                                                                                                     "t_8","t_9"))
- }
+   if(optional){
+     result_data<- sys_data %>% select(doc_id, text, date, from_user_name)
+     result_data %>% rename(author = from_user_name)
+     result_data$additional<-paste0("\"",paste(sys_data$from_user_id,  sys_data$retweetcount, sys_data$from_user_followercount,
+                                               sys_data$t_1, sys_data$t_2, sys_data$t_3, sys_data$t_4,sys_data$t_5, sys_data$t_6, 
+                                               sys_data$t_7, sys_data$t_8,sys_data$t_9, sep='", "'), "\"")
+   }
+   
+  }
 
+  if(!optional){
+   result_data <- sys_data %>% select(doc_id, text)
+  }
+ 
    return(result_data)  
 }
