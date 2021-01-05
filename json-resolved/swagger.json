@@ -2,9 +2,9 @@
   "openapi" : "3.0.3",
   "info" : {
     "title" : "Climate Component",
-    "description" : "This API specification documents the  Climate Change miniproject done as a part of ODYCCEUS EU project. It combines methods for visualizing and analyzing the climate change debate in three media spheres: UK parliament speeches, the Guardian and Twitter.",
+    "description" : "This API specification documents the  Climate Change miniproject done as a part of ODYCCEUS EU project. It combines methods for visualizing and analyzing the climate change debate in three media spheres: UK parliament speeches, the Guardian and Twitter. We consider three large-scale datasets spanning from July 2016 to September 2019: 1) For the perspective of social media, a collection of 80M tweets related to climate change (courtesy of The Digital Methods Initiative, Amsterdam) 2) For the perspective of mass media, 4526 articles published by The Guardian (courtesy of the Vrije Universiteit Brussel) 3) For the political debate, a corpus of 92 287 UK parliamentary speeches (courtesy of the Max Planck Institute for Mathematics in the Sciences, Leipzig). All documents in these three corpora have been selected by the use of the keyword \"climate\". For each of the dataset, we identify and observe the dynamics of subtopics over time, employing methods ranging from outlier exploration and topic modeling to network representations. This allows us to investigate the possible existence and dynamics of discursive shifts.",
     "contact" : {
-      "email" : "asd@asd.com"
+      "email" : "robin.Lamarche-Perrin@lip6.fr"
     },
     "license" : {
       "name" : "Apache 2.0",
@@ -33,7 +33,6 @@
     "/climate-data/timeline" : {
       "post" : {
         "summary" : "Get temporal evolution of the number of documents and words, optionally dividing them by topic.",
-        "description" : "tbd",
         "parameters" : [ {
           "name" : "corpus",
           "in" : "query",
@@ -164,7 +163,7 @@
     },
     "/climate-data/metadata" : {
       "post" : {
-        "summary" : "Get metadata from a sample of the three corpora",
+        "summary" : "(unused) Get metadata from a sample of the three corpora",
         "description" : " Get metadata from a sample of the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).",
         "parameters" : [ {
           "name" : "req",
@@ -196,7 +195,7 @@
     },
     "/climate-data/metadata-sample" : {
       "post" : {
-        "summary" : " Get metadata from the three corpora according to some structured JSON request",
+        "summary" : "(unused) Get metadata from the three corpora according to some structured JSON request",
         "description" : " Get metadata from the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).",
         "parameters" : [ {
           "name" : "req",
@@ -254,9 +253,60 @@
         }
       }
     },
+    "/event-analyzer/texts" : {
+      "post" : {
+        "summary" : "Get metadata including texts (from the original dataset) based on selected doc_ids",
+        "description" : "Returns some metadata that the original data consists of - by default it returns only texts and doc_id; if optional parameter is true, the function returns also fields: date, author (for guardian it is guardian article author, for tweeter tweet handle, for uk it is name) and \"additional\" field; additional field consists of one string that concatenates additional metadata that differ depending on corpus (fields in string are QUOTED and COMMA SEPARATED) - for guardian it consists of title, description and topics values from G1 to G10, for UK it consists of discussion title, party, speaker id, and topics values from P1 to P10, for Twitter it consists of user id (authors id), retweetcount, users follower count and topics values from T1 to T9 ; function is made in order to be able to analyze smaller chunks of texts and other additional information incuded in original data, where the selection of the data (date, topic) should be made regarding particular event(s) from /event-analyzer/events",
+        "parameters" : [ {
+          "name" : "ids",
+          "in" : "query",
+          "required" : true,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ids"
+            }
+          }
+        }, {
+          "name" : "corpus",
+          "in" : "query",
+          "required" : true,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "guardian.", "twitter", "uk_parliament" ]
+          }
+        }, {
+          "name" : "optional",
+          "in" : "query",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "boolean",
+            "default" : true
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Returns metadata that the original data consists of. By default (optional = FALSE) it returns only texts and doc_id. If optional parameter is true, the function returns also fields: date, author (for guardian it is guardian article author, for tweeter the authors tweet handle, for uk it is speaker name) and \"additional\" field. Additional field consists of one string that concatenates additional metadata that differ depending on corpus (fields in string are QUOTED and COMMA SEPARATED). For guardian additional field consists of title, description and topics values from G1 to G10, for UK it consists of discussion title, party, speaker id, and topics values from P1 to P10, for Twitter it consists of user id (authors id), retweetcount, users follower count and topics values from T1 to T9 ; ",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/inline_response_200_3"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/event-analyzer/eventwords" : {
       "post" : {
-        "summary" : "Get most significant words from given texts",
+        "summary" : "(unused) Get most significant words from given texts ",
         "description" : " Function returing most significant words (using tfidf) from given texts (to be used for naming the events from events())",
         "parameters" : [ {
           "name" : "id_text",
@@ -332,23 +382,150 @@
                   "required" : [ "matrix" ],
                   "type" : "array",
                   "example" : [ {
-                    "topic1" : "G1",
-                    "topic2" : "G2",
-                    "divergence" : 60.4112,
-                    "similarity" : 0.0166
-                  }, {
-                    "topic1" : "G1",
-                    "topic2" : "G3",
-                    "divergence" : 67.6275,
-                    "similarity" : 0.0148
-                  }, {
-                    "topic1" : "G2",
-                    "topic2" : "G3",
-                    "divergence" : 119.1192,
-                    "similarity" : 0.0084
+                    "network" : [ {
+                      "topic1" : "G1",
+                      "topic2" : "G10",
+                      "divergence" : 60.4112,
+                      "similarity" : 0.0166
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G2",
+                      "divergence" : 67.6275,
+                      "similarity" : 0.0148
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G3",
+                      "divergence" : 119.1192,
+                      "similarity" : 0.0084
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G4",
+                      "divergence" : 28.6757,
+                      "similarity" : 0.0349
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G5",
+                      "divergence" : 110.76,
+                      "similarity" : 0.009
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G6",
+                      "divergence" : 23.8549,
+                      "similarity" : 0.0419
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G7",
+                      "divergence" : 38.9164,
+                      "similarity" : 0.0257
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G8",
+                      "divergence" : 102.6114,
+                      "similarity" : 0.0097
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "G9",
+                      "divergence" : 118.4965,
+                      "similarity" : 0.0084
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P1",
+                      "divergence" : 89.046,
+                      "similarity" : 0.0112
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P10",
+                      "divergence" : 197.0116,
+                      "similarity" : 0.0051
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P2",
+                      "divergence" : 91.9337,
+                      "similarity" : 0.0109
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P3",
+                      "divergence" : 101.4663,
+                      "similarity" : 0.0099
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P4",
+                      "divergence" : 87.1109,
+                      "similarity" : 0.0115
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P5",
+                      "divergence" : 49.1911,
+                      "similarity" : 0.0203
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P6",
+                      "divergence" : 98.3856,
+                      "similarity" : 0.0102
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P7",
+                      "divergence" : 126.9878,
+                      "similarity" : 0.0079
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P8",
+                      "divergence" : 25.7028,
+                      "similarity" : 0.0389
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "P9",
+                      "divergence" : 188.0701,
+                      "similarity" : 0.0053
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T1",
+                      "divergence" : 158.0725,
+                      "similarity" : 0.0063
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T2",
+                      "divergence" : 2.8088,
+                      "similarity" : 0.356
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T3",
+                      "divergence" : 197.7926,
+                      "similarity" : 0.0051
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T4",
+                      "divergence" : 92.0776,
+                      "similarity" : 0.0109
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T5",
+                      "divergence" : 615.9469,
+                      "similarity" : 0.0016
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T6",
+                      "divergence" : 154.8071,
+                      "similarity" : 0.0065
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T7",
+                      "divergence" : 23.374,
+                      "similarity" : 0.0428
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T8",
+                      "divergence" : 172.901,
+                      "similarity" : 0.0058
+                    }, {
+                      "topic1" : "G1",
+                      "topic2" : "T9",
+                      "divergence" : 94.5074,
+                      "similarity" : 0.0106
+                    } ]
                   } ],
                   "items" : {
-                    "$ref" : "#/components/schemas/inline_response_200_3"
+                    "$ref" : "#/components/schemas/inline_response_200_4"
                   }
                 }
               }
@@ -401,7 +578,7 @@
                     "dim_y" : -19.028
                   } ],
                   "items" : {
-                    "$ref" : "#/components/schemas/inline_response_200_4"
+                    "$ref" : "#/components/schemas/inline_response_200_5"
                   }
                 }
               }
@@ -427,7 +604,7 @@
       "topicEnum" : {
         "pattern" : "^[P|T|G][0-9]*$",
         "type" : "string",
-        "example" : "[\"G10\",\"P1\",\"T15\",\"T3\"]"
+        "example" : "G10"
       },
       "timeEnum" : {
         "type" : "string",
@@ -805,13 +982,31 @@
           }
         }
       },
+      "ids" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/ids"
+        }
+      },
+      "inline_response_200_3" : {
+        "required" : [ "result" ],
+        "type" : "object",
+        "properties" : {
+          "result" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/inline_response_200_3_result"
+            }
+          }
+        }
+      },
       "id_text" : {
         "type" : "array",
         "items" : {
           "$ref" : "#/components/schemas/id_text"
         }
       },
-      "topicanalyzersimilarity_matrix" : {
+      "topicanalyzersimilarity_network" : {
         "properties" : {
           "topic1" : {
             "$ref" : "#/components/schemas/topicEnum"
@@ -829,12 +1024,12 @@
           }
         }
       },
-      "inline_response_200_3" : {
+      "inline_response_200_4" : {
         "properties" : {
-          "matrix" : {
+          "network" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/topicanalyzersimilarity_matrix"
+              "$ref" : "#/components/schemas/topicanalyzersimilarity_network"
             }
           }
         }
@@ -865,7 +1060,7 @@
           }
         }
       },
-      "inline_response_200_4" : {
+      "inline_response_200_5" : {
         "properties" : {
           "topics" : {
             "type" : "array",
@@ -985,6 +1180,29 @@
             "enum" : [ "up", "down", "same" ]
           }
         }
+      },
+      "inline_response_200_3_result" : {
+        "properties" : {
+          "doc_id" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          },
+          "date" : {
+            "type" : "string",
+            "description" : "exists if optional = TRUE",
+            "format" : "date"
+          },
+          "author" : {
+            "type" : "string",
+            "description" : "exists if optional = TRUE"
+          },
+          "additional" : {
+            "type" : "string",
+            "description" : "exists if optional = TRUE"
+          }
+        }
       }
     },
     "responses" : {
@@ -1018,6 +1236,16 @@
           }
         }
       },
+      "textsResponse" : {
+        "description" : "Returns metadata that the original data consists of. By default (optional = FALSE) it returns only texts and doc_id. If optional parameter is true, the function returns also fields: date, author (for guardian it is guardian article author, for tweeter the authors tweet handle, for uk it is speaker name) and \"additional\" field. Additional field consists of one string that concatenates additional metadata that differ depending on corpus (fields in string are QUOTED and COMMA SEPARATED). For guardian additional field consists of title, description and topics values from G1 to G10, for UK it consists of discussion title, party, speaker id, and topics values from P1 to P10, for Twitter it consists of user id (authors id), retweetcount, users follower count and topics values from T1 to T9 ; ",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/inline_response_200_3"
+            }
+          }
+        }
+      },
       "similarityResponse" : {
         "description" : "The list of similarity groups, one for each topic.",
         "content" : {
@@ -1026,23 +1254,150 @@
               "required" : [ "matrix" ],
               "type" : "array",
               "example" : [ {
-                "topic1" : "G1",
-                "topic2" : "G2",
-                "divergence" : 60.4112,
-                "similarity" : 0.0166
-              }, {
-                "topic1" : "G1",
-                "topic2" : "G3",
-                "divergence" : 67.6275,
-                "similarity" : 0.0148
-              }, {
-                "topic1" : "G2",
-                "topic2" : "G3",
-                "divergence" : 119.1192,
-                "similarity" : 0.0084
+                "network" : [ {
+                  "topic1" : "G1",
+                  "topic2" : "G10",
+                  "divergence" : 60.4112,
+                  "similarity" : 0.0166
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G2",
+                  "divergence" : 67.6275,
+                  "similarity" : 0.0148
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G3",
+                  "divergence" : 119.1192,
+                  "similarity" : 0.0084
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G4",
+                  "divergence" : 28.6757,
+                  "similarity" : 0.0349
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G5",
+                  "divergence" : 110.76,
+                  "similarity" : 0.009
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G6",
+                  "divergence" : 23.8549,
+                  "similarity" : 0.0419
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G7",
+                  "divergence" : 38.9164,
+                  "similarity" : 0.0257
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G8",
+                  "divergence" : 102.6114,
+                  "similarity" : 0.0097
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "G9",
+                  "divergence" : 118.4965,
+                  "similarity" : 0.0084
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P1",
+                  "divergence" : 89.046,
+                  "similarity" : 0.0112
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P10",
+                  "divergence" : 197.0116,
+                  "similarity" : 0.0051
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P2",
+                  "divergence" : 91.9337,
+                  "similarity" : 0.0109
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P3",
+                  "divergence" : 101.4663,
+                  "similarity" : 0.0099
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P4",
+                  "divergence" : 87.1109,
+                  "similarity" : 0.0115
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P5",
+                  "divergence" : 49.1911,
+                  "similarity" : 0.0203
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P6",
+                  "divergence" : 98.3856,
+                  "similarity" : 0.0102
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P7",
+                  "divergence" : 126.9878,
+                  "similarity" : 0.0079
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P8",
+                  "divergence" : 25.7028,
+                  "similarity" : 0.0389
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "P9",
+                  "divergence" : 188.0701,
+                  "similarity" : 0.0053
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T1",
+                  "divergence" : 158.0725,
+                  "similarity" : 0.0063
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T2",
+                  "divergence" : 2.8088,
+                  "similarity" : 0.356
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T3",
+                  "divergence" : 197.7926,
+                  "similarity" : 0.0051
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T4",
+                  "divergence" : 92.0776,
+                  "similarity" : 0.0109
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T5",
+                  "divergence" : 615.9469,
+                  "similarity" : 0.0016
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T6",
+                  "divergence" : 154.8071,
+                  "similarity" : 0.0065
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T7",
+                  "divergence" : 23.374,
+                  "similarity" : 0.0428
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T8",
+                  "divergence" : 172.901,
+                  "similarity" : 0.0058
+                }, {
+                  "topic1" : "G1",
+                  "topic2" : "T9",
+                  "divergence" : 94.5074,
+                  "similarity" : 0.0106
+                } ]
               } ],
               "items" : {
-                "$ref" : "#/components/schemas/inline_response_200_3"
+                "$ref" : "#/components/schemas/inline_response_200_4"
               }
             }
           }
@@ -1078,7 +1433,7 @@
                 "dim_y" : -19.028
               } ],
               "items" : {
-                "$ref" : "#/components/schemas/inline_response_200_4"
+                "$ref" : "#/components/schemas/inline_response_200_5"
               }
             }
           }
