@@ -295,7 +295,7 @@ texts<-function(ids, corpus = "guardian", optional = TRUE){
    if(optional){
      result_data<- sys_data %>% select(doc_id, text, date, name)
      result_data %>% rename(author = name)
-     result_data$additional<-paste0("\"",paste(sys_data$, sys_data$party,sys_data$speaker_id,
+     result_data$additional<-paste0("\"",paste(sys_data$discussion_title, sys_data$party,sys_data$speaker_id,
                                                sys_data$t_1, sys_data$t_2, sys_data$t_3, sys_data$t_4,sys_data$t_5, sys_data$t_6, 
                                                sys_data$t_7, sys_data$t_8,sys_data$t_9, sys_data$t_10,sep='", "'), "\"")
    }
