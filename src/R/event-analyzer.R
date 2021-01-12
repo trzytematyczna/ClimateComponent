@@ -129,7 +129,7 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
         ungroup() %>%
         select(seg_end) ##segment already in min tibble
       all_coords <- cbind(coord_segments_min, coord_segments_max) %>%
-        mutate(seg_end=seg_end+1) %>% ### for geom_step --> visualisation moved by 1
+      #  mutate(seg_end=seg_end+1) %>% ### for geom_step --> visualisation moved by 1
         mutate(min_prob = min_probability,
                max_prob = max_probability)
       
@@ -139,7 +139,8 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
  
   non_unitary_segments_data <- segments_data %>%
     mutate(seg_len=seg_end-seg_start+1)%>%
-    filter(seg_len>=event_min_length)   ##length of period of the event used here -- defines how long the event supposed to last (in time slot defined by aggregation from data)
+    filter(seg_len>=event_min_length)   ##length of period of the event used here -- defines how long the event supposed to last
+  #(in time slot defined by aggregation from data)
 
   temp <- merge(dtp,data, by=c("date","topic"))
   non_unitary_filt <- non_unitary_segments_data %>% select(-segment)
