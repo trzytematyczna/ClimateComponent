@@ -1,6 +1,5 @@
 
 library(dplyr)
-# library(ggplot2)
 library(readr)
 library(tidyr)
 library(jsonlite)
@@ -21,19 +20,6 @@ ping <- function () {
   }
 
 
-#* Returns dummy event data in json
-#* @get /evdoc 
-# evdoc<-function(){
-#   # datajson<-read_json("data/date_topic_prob.json")
-  # datajson<-read_json("data/res_guardian_timeline.json")
-  # dat<-datajson$timeline
-  # data<-data.frame(matrix(unlist(dat), nrow=length(dat), byrow=T))
-  # return(datajson)
-
-# }
-
-
-
 #* Returns higlighted events defined as document probability higher than event_min_prob lasting at least event_min_length; output:  result$data -  #xaxis - index, yaxis - sum_probability, result$avg - horisontal line, result$segments - for a single rectangle: xmin=seg_start, xmax=seg_end (x-axis bounds) ymin=min_prob, ymax=max_prob (y-axis bounds )
 #* @param timeline An array of observations, each giving the lexical distribution of a given topic (see /climate-data/topics).
 #* @param event_min_length Minimum duration of the event in units in accordance with the aggregation unit of the input data (day/week/month)
@@ -44,7 +30,6 @@ ping <- function () {
 #* @post /events 
 events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends = F, trendthreshold = 0.02){
 
-  # timeline <- tl$timeline
   dtp <- timeline
     
   # Is it an already parsed set of arguments (e.g. using curl and application/json content)
@@ -58,16 +43,6 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   #   print(dtp)
   # }
 
-  # names(dtp)<-c("corpus","date","topic","doc_nb","word_nb")
-  
-  # print(head(dtp))
-
-  # dtp<- dtp %>% 
-  #   select(date,topic,doc_nb) %>%  
-  #   mutate(topic = str_replace_all(topic, 'G',"")) %>%  
-  #   mutate(topic = str_replace_all(topic, 'T',"")) %>%  
-  #   mutate(topic = str_replace_all(topic, 'P',""))
-  
   dtp <- dtp  %>% mutate_if(is.factor, as.character)
   dtp$doc_nb<- as.double(dtp$doc_nb)
   
@@ -129,7 +104,6 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
         ungroup() %>%
         select(seg_end) ##segment already in min tibble
       all_coords <- cbind(coord_segments_min, coord_segments_max) %>%
-      #  mutate(seg_end=seg_end+1) %>% ### for geom_step --> visualisation moved by 1
         mutate(min_prob = min_probability,
                max_prob = max_probability)
       
@@ -145,11 +119,6 @@ events<-function(timeline, event_min_prob = 0.12, event_min_length = 2, trends =
   temp <- merge(dtp,data, by=c("date","topic"))
   non_unitary_filt <- non_unitary_segments_data %>% select(-segment)
    
-  # all_res <- left_join(temp, non_unitary_filt, by = c("topic")) 
-  # asd<-all_res %>% filter(index>=seg_start, index<= seg_end)
-  # asd2<-left_join(temp,asd)%>%
-  #   arrange(topic,date)
-  
   all_res <- left_join(temp, non_unitary_filt, by = c("topic"))  %>%
     filter(index>=seg_start, index<= seg_end) %>%
     full_join(temp) %>%
@@ -244,48 +213,47 @@ eventwords<-function(id_text, top = 10){
 
 #* Returns all metadata (including text!) of tweets/speeches/articles given the selected ids
 #* @param ids metadata structure from function /climate-data/timeline (columns: "corpus","date","topic","doc_nb","word_nb", "doc_ids")
-#* @param corpus
+#* @param corpus Name of the corpus
+#* @param optional If true returns corpus-specific metadata, concatenated in one string
 #* @serializer json
 #* @post /texts 
 texts<-function(ids, corpus = "guardian", optional = TRUE){
   
-  # Is it an already parsed set of arguments (e.g. using curl and application/json content)
-  if (is.data.frame(ids)) {
+# Is it an already parsed set of arguments (e.g. using curl and application/json content)
+if (is.data.frame(ids)) {
     data<-ids
   } else {
     data<-fromJSON(ids)$timeline
   }
-  names(data)<-c("corpus","date","topic","doc_nb","word_nb", "doc_ids")
-  
-  unnested_dfif <- data %>% 
-    select(date, doc_ids) %>%
-    separate_rows(doc_ids,sep = " ")
-    
-  
-  ids_string<-unnested_dfif %>% pull(doc_ids) %>% paste(collapse = "|")
-   
-  # x<-paste0("xargs -I {} grep \"^{}\" data/",corpus,"-all-data.csv < ", ids$doc_ids)
-  # cat(x)
-  xcommand<-paste0('grep -P \"', ids_string,'\" ./data/content/',corpus,'.content.csv ')
- system_res <-system(xcommand,intern = TRUE)
- df<-as.data.frame(system_res, stringsAsFactors = F)
+names(data)<-c("corpus","date","topic","doc_nb","word_nb", "doc_ids")
+
+#preparation of the string to be executed in system command - ids as a string separated with "|"
+unnested_dfif <- data %>% 
+  select(date, doc_ids) %>%
+  separate_rows(doc_ids,sep = " ")
+ids_string<-unnested_dfif %>% pull(doc_ids) %>% paste(collapse = "|")
+
+#used command grep on data stored in /data/content (pre-prepared)    
+xcommand<-paste0('grep -P \"', ids_string,'\" ./data/content/',corpus,'.content.csv ')
+system_res <-system(xcommand,intern = TRUE)
+
+#return string form command - each row is one string
+df<-as.data.frame(system_res, stringsAsFactors = F)
+
+#separation of the command return string to separate columns - number and names of columns depend on the corpus! 
  if(corpus == "guardian"){
   
    sys_data<- read.table(text = df$system_res, sep =",", header = F, 
                             stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "type", "url", "authors","authors_nb","section","tags","tags_nb",
                                                                                   "date_published","share_count","comment_nb","title","description","text", "length",
                                                                                   "t_1", "t_2", "t_3", "t_4","t_5", "t_6", "t_7", "t_8","t_9", "t_10", "date"))
-   
+  #preparation of concatenated string for additional column
   if(optional){
     result_data<- sys_data %>% select(doc_id, text, date, authors)
     result_data$additional<-paste0("\"",paste(sys_data$title, sys_data$description,sys_data$t_1, sys_data$t_2, sys_data$t_3, sys_data$t_4,sys_data$t_5, sys_data$t_6, 
                    sys_data$t_7, sys_data$t_8,sys_data$t_9, sys_data$t_10,sep='", "'), "\"")
    }
  }
- # c(doc_id","date","author","interactor","text","topics","additional" 
-   # "type", "url", "authors","authors_nb","section","tags","tags_nb",
-    # "date_published","share_count","comment_nb","title","description","text", "length",
-    # "t_1", "t_2", "t_3", "t_4","t_5", "t_6", "t_7", "t_8","t_9", "t_10", "date")
  else if(corpus == "uk_parliament"){
    sys_data<-read.table(text = df$system_res, sep =",", header = F, stringsAsFactors = FALSE, quote = "\"", col.names = c("doc_id", "date", 
                                                                                                                     "discussion_title","name",
@@ -293,6 +261,7 @@ texts<-function(ids, corpus = "guardian", optional = TRUE){
                                                                                                                     "length","t_1","t_2","t_3",
                                                                                                                     "t_4","t_5","t_6","t_7",
                                                                                                                     "t_8","t_9","t_10"))
+   #preparation of concatenated string for additional column
    if(optional){
      result_data<- sys_data %>% select(doc_id, text, date, name)
      result_data %>% rename(author = name)
@@ -308,6 +277,7 @@ texts<-function(ids, corpus = "guardian", optional = TRUE){
                                                                                                                     "text","t_1","t_2","t_3",
                                                                                                                     "t_4","t_5","t_6","t_7",
                                                                                                                     "t_8","t_9"))
+   #preparation of concatenated string for additional column
    if(optional){
      result_data<- sys_data %>% select(doc_id, text, date, from_user_name)
      result_data %>% rename(author = from_user_name)
@@ -318,6 +288,7 @@ texts<-function(ids, corpus = "guardian", optional = TRUE){
    
   }
 
+  #returning only doc_id and text
   if(!optional){
    result_data <- sys_data %>% select(doc_id, text)
   }
