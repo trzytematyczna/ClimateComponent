@@ -25,7 +25,7 @@ ping <- function () { return ("OK!"); }
 #* @param by_topic Should the timeline be divided by topic. Default value is "FALSE".
 #* @param doc_ids Should document ids be also retrieved. Default value is "FALSE".
 #* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
-# @response 200 timeline An array of observations, each given the number of documents and words for a given corpus at a given date (optionally, associated to a given topic).
+#* @response 200 timeline An array of observations, each given the number of documents and words for a given corpus at a given date (optionally, associated to a given topic).
 #* @serializer json
 #* @post /timeline
 timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_ids = FALSE, sample = FALSE) {
@@ -50,7 +50,7 @@ timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_i
 #* @param topic The list of topics of interest. By default, all topics are selected.
 #* @param doc_ids Should document ids be also retrieved. Default value is "FALSE".
 #* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
-# @response topics An array of observations, each given the lexical distribution of a given topic.
+#* @response topics An array of observations, each given the lexical distribution of a given topic.
 #* @serializer json
 #* @post /topics
 topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE) {
@@ -69,10 +69,44 @@ topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE
 }
 
 
+#* Retweet network.
+#* @param doc_ids Should document ids be also retrieved. Default value is "FALSE".
+#* @param sample Should metadata be extracted from a sample of the three corpora (for testing purposes). Default value is "FALSE".
+#* @serializer json
+#* @post /network
+network <- function (doc_ids = FALSE, sample = FALSE) {
+    reqs <- list()
+
+    reqs$links$dims$corpus$select <- "twitter"
+    reqs$links$dims$author$group_by <- "community"
+    reqs$links$dims$interactor$group_by <- "community"
+    reqs$links$vars <- c ("doc_nb", "word_nb")
+    if (doc_ids) reqs$links$vars <- c (reqs$links$vars, "doc_ids")
+
+    reqs$nodes$dims$corpus$select <- "twitter"
+    reqs$nodes$dims$author$group_by <- "community"
+    reqs$nodes$dims$topic <- list()
+    reqs$nodes$vars <- c ("doc_nb", "word_nb")
+    if (doc_ids) reqs$nodes$vars <- c (reqs$nodes$vars, "doc_ids")
+
+    reqs$communities$dims$corpus$select <- "twitter"
+    reqs$communities$dims$author$group_by <- "community"
+    reqs$communities$vars <- c ("doc_nb", "word_nb", "author_nb", "author_dist")
+    if (doc_ids) reqs$communities$vars <- c (reqs$communities$vars, "doc_ids")
+    
+    reqs$topics$dims$corpus$select <- "twitter"
+    reqs$topics$dims$topic <- list()
+    reqs$topics$vars <- c ("doc_nb", "word_nb", "word_dist")
+    if (doc_ids) reqs$topics$vars <- c (reqs$topics$vars, "doc_ids")
+
+    get.data (reqs, sample)
+}
+
+
 
 #* Get metadata from a sample of the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).
 #* @param req A structured JSON request describing what metadata should be retreived.
-# @response res Resulting metadata from a sample of the three corpora.
+#* @response res Resulting metadata from a sample of the three corpora.
 #* @serializer json
 #* @post /metadata
 metadata <- function (req) {
@@ -84,7 +118,7 @@ metadata <- function (req) {
 
 #* Get metadata from the three corpora according to some structured JSON request describing (1) dimensions of interest (among corpus, author, interactor, date, and topic), (2) eventual filtering and/or aggregation of the elements in these dimensions, (3) variables of interest (among number of documents, of words, of characters, and list of document ids).
 #* @param req A structured JSON request describing what metadata should be retreived.
-# @response res Resulting metadata from the three corpora.
+#* @response res Resulting metadata from the three corpora.
 #* @serializer json
 #* @post /metadata-sample
 metadata.sample <- function (req) {

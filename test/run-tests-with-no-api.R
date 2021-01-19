@@ -23,9 +23,12 @@ spe <- specificity (top$topics)
 print (spe)
 specificity_plot (spe$topics, spe$words, word_threshold = 0.98)
 
-
 print ("GET timeline")
 tl <- timeline (corpus = "twitter", timescale = "month", by_topic = TRUE, sample = sample)
 print (tl)
 
 events (tl$timeline)
+
+print ("GET network")
+net <- network (sample = sample)
+print (net)
