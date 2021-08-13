@@ -153,6 +153,7 @@ specificity <- function (topics, dim_x = 1, dim_y = 2) {
     data <- topic_word_prob %>% rename (my_topic_field = topic) %>% spread (word, prob)
     topic.list <- data %>% pull (my_topic_field)
     data <- data[-1]
+    data <- data %>% replace (is.na(.), 0)
 
     pca <- data %>% PCA (scale.unit = TRUE, graph = FALSE)
 

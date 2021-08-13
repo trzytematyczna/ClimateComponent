@@ -14,7 +14,7 @@ sim <- similarity (top$topics, grouping_threshold = 0.90)
 print (sim)
 
 ## pdf ("test.pdf")
-similarity_plot (sim$matrix, sim$groups, edge_threshold = 0.90)
+similarity_plot (sim$network, sim$groups, edge_threshold = 0.90)
 ## dev.off()
 
 print ("GET specificity")
