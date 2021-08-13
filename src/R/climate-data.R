@@ -32,7 +32,7 @@ timeline <- function (corpus = "all", timescale = "week", by_topic = FALSE, doc_
     reqs <- list()
     
     reqs$timeline$dims$corpus <- list()
-    if (corpus != "all") reqs$timeline$dims$corpus$select <- corpus
+    if (any (corpus != "all")) reqs$timeline$dims$corpus$select <- corpus
     
     reqs$timeline$dims$date$group_by <- timescale
     if (by_topic) reqs$timeline$dims$topic <- list()
@@ -57,10 +57,10 @@ topics <- function (corpus = "all", topic = "all", doc_ids = FALSE, sample = FAL
     reqs <- list()
 
     reqs$topics$dims$corpus <- list()
-    if (corpus != "all") reqs$topics$dims$corpus$select <- corpus
+    if (any (corpus != "all")) reqs$topics$dims$corpus$select <- corpus
 
     reqs$topics$dims$topic <- list()
-    if (topic != "all") reqs$topics$dims$topic$select <- topic
+    if (any (topic != "all")) reqs$topics$dims$topic$select <- topic
 
     reqs$topics$vars <- c ("doc_nb", "word_nb", "word_dist")
     if (doc_ids) reqs$topics$vars <- c (reqs$topics$vars, "doc_ids")
@@ -154,7 +154,7 @@ get.data <- function (reqs, sample = FALSE) {
         main.dim.names <- dim.names [dim.names != "corpus"]
         for (corpus.name in corpus.names) {
             corpus.data <- read_csv (paste0 (dir, corpus.name, ".", file.name, ".csv"))
-            corpus.data <- corpus.data %>% select (main.dim.names, names (corpus.data) %>% intersect (var.names))
+            corpus.data <- corpus.data %>% select (all_of (main.dim.names), names (corpus.data) %>% intersect (var.names))
             corpus.data$corpus <- corpus.name
 
             ## FOR EACH DIMENSION
@@ -189,10 +189,10 @@ get.data <- function (reqs, sample = FALSE) {
                         
                         corpus.data <-
                             corpus.data %>%
-                            left_join (corpus.data.tmp %>% select (!! sym (dim.name) := sup.dim.name, op)) %>%
+                            left_join (corpus.data.tmp %>% select (!! sym (dim.name) := all_of (sup.dim.name), all_of (op))) %>%
                             select (- !! sym (dim.name)) %>%
                             rename (!! sym (dim.name) := !! op) %>%
-                            group_by_at (vars (dim.names)) %>%
+                            group_by_at (vars (all_of (dim.names))) %>%
                             mutate_at (vars (var.names %>% intersect (c ("doc_nb", "word_nb", "char_nb"))), ~ sum (.)) %>%
                             mutate_at (vars (var.names %>% intersect ("doc_ids")), ~ agg.ids (.)) %>%
                             slice (1L) %>%
@@ -234,7 +234,7 @@ get.data <- function (reqs, sample = FALSE) {
         ## }
 
         ## ## REORDER VARIABLES
-        data <- data %>% select (dim.names, var.names)
+        data <- data %>% select (all_of (dim.names), all_of (var.names))
         ress[[req.name]] <- data
     }
 
