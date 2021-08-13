@@ -11,9 +11,9 @@ suppressMessages (require (igraph))
 suppressMessages (require (tidyr))
 suppressMessages (require (tibble))
 suppressMessages (require (FactoMineR))
-suppressMessages (library (scales))
-suppressMessages (library (RColorBrewer))
-suppressMessages (library (ggrepel))
+suppressMessages (require (scales))
+suppressMessages (require (RColorBrewer))
+suppressMessages (require (ggrepel))
 
 #* @get /ping
 #* Simple test function.

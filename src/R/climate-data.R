@@ -28,11 +28,11 @@ ping <- function () { return ("OK!"); }
 #* @response 200 timeline An array of observations, each given the number of documents and words for a given corpus at a given date (optionally, associated to a given topic).
 #* @serializer json
 #* @post /timeline
-timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_ids = FALSE, sample = FALSE) {
+timeline <- function (corpus = "all", timescale = "week", by_topic = FALSE, doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
     
     reqs$timeline$dims$corpus <- list()
-    if (! is.null (corpus)) reqs$timeline$dims$corpus$select <- corpus
+    if (corpus != "all") reqs$timeline$dims$corpus$select <- corpus
     
     reqs$timeline$dims$date$group_by <- timescale
     if (by_topic) reqs$timeline$dims$topic <- list()
@@ -53,14 +53,14 @@ timeline <- function (corpus = NULL, timescale = "week", by_topic = FALSE, doc_i
 #* @response topics An array of observations, each given the lexical distribution of a given topic.
 #* @serializer json
 #* @post /topics
-topics <- function (corpus = NULL, topic = NULL, doc_ids = FALSE, sample = FALSE) {
+topics <- function (corpus = "all", topic = "all", doc_ids = FALSE, sample = FALSE) {
     reqs <- list()
 
     reqs$topics$dims$corpus <- list()
-    if (! is.null (corpus)) reqs$topics$dims$corpus$select <- corpus
+    if (corpus != "all") reqs$topics$dims$corpus$select <- corpus
 
     reqs$topics$dims$topic <- list()
-    if (! is.null (topic)) reqs$topics$dims$topic$select <- topic
+    if (topic != "all") reqs$topics$dims$topic$select <- topic
 
     reqs$topics$vars <- c ("doc_nb", "word_nb", "word_dist")
     if (doc_ids) reqs$topics$vars <- c (reqs$topics$vars, "doc_ids")
